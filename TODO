@@ -1,0 +1,52 @@
+Require the following methods:
+	- a routine that takes in a ticker symbol
+		- returns the following (in JSON) (hash by symbol)
+			- symbol
+				- current ticker price
+				- ex-dividend date
+				- dividend yeid
+				- next earnings report date
+				- P/E ratio
+			Example: 
+				{ "AMZN" : {
+					"Price" : "950.3",
+					"Ex-dividend date" : "2017-09-14",
+					"Yield" : "2.4%",
+					"P/E Ratio" : "65.4",
+					"Earnings date" : "2017-10-24"
+					}
+				}
+
+	- a routine that takes in a ticker symbol and a date
+		- returns the following (in JSON) (hash by symbol)
+			- symbol
+				- call options for the target date (from input parameters) (array of hashes)
+					- expire date
+					- strike price
+					- ask price
+			Example:
+				{ "TROW" : { 
+					"2017-10-20" : [ 
+						{
+							"Strike Price" : "75.00",
+							"Ask Price" : "9.60"
+						},
+						{
+							"Strike Price" : "80.00",
+							"Ask Price" : "5.10"
+						}
+						]
+					}
+				}
+
+	- a routine (biz logic) that takes in all of the blended data (basic data plus option data) plus commision cost
+		returns a row of data
+				Symbol,Expiration date, ticker price, strike price, ask price, break even, break even gain %, profit with 5% move
+				TROW,2017-10-20,84.28,80,5.10,85.25,1.16%,63.52%
+
+	- a routine that reads in a list of ticker symbols
+		- fetch the basic data
+		- fetch the option chains
+		- call the business logic routine
+		- filter out the crap
+		- list the good stuff
