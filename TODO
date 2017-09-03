@@ -1,6 +1,6 @@
 Require the following methods:
 	- a routine that takes in a ticker symbol
-		- returns the following (in JSON) (hash by symbol)
+		- returns the following (hash by symbol)
 			- symbol
 				- current ticker price
 				- ex-dividend date
@@ -18,7 +18,7 @@ Require the following methods:
 				}
 
 	- a routine that takes in a ticker symbol and a date
-		- returns the following (in JSON) (hash by symbol)
+		- returns the following (hash by symbol)
 			- symbol
 				- call options for the target date (from input parameters) (array of hashes)
 					- expire date
@@ -45,6 +45,10 @@ Require the following methods:
 				TROW,2017-10-20,84.28,80,5.10,85.25,1.16%,63.52%
 
 	- a routine that reads in a list of ticker symbols
+		-Inputs (filters)
+			- max cost of the option
+			- max value for break even %
+			- min value for 5% move profit
 		- fetch the basic data
 		- fetch the option chains
 		- call the business logic routine
