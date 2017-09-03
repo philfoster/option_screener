@@ -1,4 +1,8 @@
 Require the following methods:
+	- Potential URLS for gathering data:
+		http://www.marketwatch.com/investing/stock/trow/options
+		http://www.marketwatch.com/investing/stock/trow
+		http://www.marketwatch.com/investing/stock/trow/profile
 	- a routine that takes in a ticker symbol
 		- returns the following (hash by symbol)
 			- symbol
