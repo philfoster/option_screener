@@ -1,8 +1,6 @@
 Require the following methods:
 	- Potential URLS for gathering data:
-		http://www.marketwatch.com/investing/stock/trow/options
-		http://www.marketwatch.com/investing/stock/trow
-		http://www.marketwatch.com/investing/stock/trow/profile
+		https://developer.yahoo.com/yql/console/?q=show%20tables&env=store://datatables.org/alltableswithkeys#h=SELECT+*+FROM+yahoo.finance.option_chain+WHERE+symbol%3D'GOOG'+AND+expiration%3D'2010-06'+and+type%3D'C'
 	- a routine that takes in a ticker symbol
 		- returns the following (hash by symbol)
 			- symbol
