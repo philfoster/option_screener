@@ -1,2 +1,6 @@
 Option Screener
 	- The purpose of the option screener is to look for Call options that require very little upward movement in the underlying security in order to turn a profit
+
+
+Usage:
+	screener [--file <ticker symbol file>] [--symbol] [--yield-threshold <value%>] [--max-call-cost <value>] [--max-break-even <value%>] [--max-pe-ratio <value>] --expiration-date <YYYY-MM-DD>
