@@ -5,10 +5,10 @@ Option Screener
 Usage:
 	screener [<options>] --expiration-date <YYYY-MM-DD>
 
-		[--file <ticker symbol file>] 	/ Optional, a file containing ticker symbols, one per line
-		[--symbol <ticker symbol>]  	/ Optional, a ticket symbol to evaulate
-		[--yield-threshold <value%>] 	/ Optional (filter), minimum dividend yield percentage
-		[--max-call-cost <value>] 		/ Optional (filter), maximum ask price for the call option
-		[--max-break-even <value%>] 	/ Optional (filter), maximum percentage gain to break even
-		[--max-pe-ratio <value>] 		/ Optional (filter), maximum P/E ratio
-		--expiration-date <YYYY-MM-DD>	/ Required, options expiration date
+		[--file <ticker symbol file>] 	a file containing ticker symbols, one per line
+		[--symbol <ticker symbol>]  	a ticket symbol to evaulate
+		[--yield-threshold <value%>] 	minimum dividend yield percentage
+		[--max-call-cost <value>] 		maximum ask price for the call option
+		[--max-break-even <value%>] 	maximum percentage gain to break even
+		[--max-pe-ratio <value>] 		maximum P/E ratio
+		--expiration-date <YYYY-MM-DD>	options expiration date
