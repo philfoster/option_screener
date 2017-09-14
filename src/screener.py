@@ -6,8 +6,9 @@ import re
 
 min_open_interest = 10
 max_ask = 10
-max_days = 90
-min_days = 14
+max_days = 45
+min_days = 21
+max_attempts = 3
 
 base_url = "http://www.marketwatch.com/investing/stock/"
 
@@ -81,7 +82,7 @@ def get_option_calls ( symbol ):
 
 		# Skip dates too far
 		if ( date - now ) > ( 86400 * max_days ):
-			print "Date({0}): {1} is too far".format( symbol, date )
+			print "Date({0}): {1} is too far in the future".format( symbol, date )
 			continue
 
 		data = get_option_chain_by_date ( symbol, date )
@@ -156,7 +157,18 @@ def fetch_url ( url ):
 	# Slow this pig down a little
 	time.sleep ( 1 )
 	print "Fetching {0}".format( url )
-	return urlread ( url )
+	page_data = None
+	attempts = 1
+	while ( attempts <= max_attempts ):
+		try:
+			page_data = urlread ( url )
+			break
+		except Error as e:
+			print "Error: {0}".format(e)
+			attempts = attempts + 1
+			time.sleep ( 5 )
+
+	return page_data
 
 symbols = get_symbols ( "symbols.txt" )
 
