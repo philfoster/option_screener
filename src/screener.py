@@ -272,8 +272,8 @@ for call in viable_calls:
 	cost_to_buy = ( ask * 100 ) + commission_cost
 
 	profit_dollars = proceeds_at_target - cost_to_buy
-	profit_percent = ( ( profit_dollars / cost_to_buy ) - 1 ) * 100
+	profit_percent = ( profit_dollars / cost_to_buy )
 
-	f.write("{0},{1},{2},{3},\"{4}\",{5},{6},{7},{8},{9},{10},{11},{12},{13:.2f}%\n".format ( symbol, price, pe_ratio, div_yield,div_date,exp_date,strike,ask,(strike + ask),cost_to_buy,price_at_target,proceeds_at_target,profit_dollars,profit_percent) )
+	f.write("{0},{1},{2},{3},\"{4}\",{5},{6},{7},{8},{9},{10},{11},{12},{13:.2%}\n".format ( symbol, price, pe_ratio, div_yield,div_date,exp_date,strike,ask,(strike + ask),cost_to_buy,price_at_target,proceeds_at_target,profit_dollars,profit_percent) )
 
 f.close()
