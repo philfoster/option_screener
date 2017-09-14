@@ -6,6 +6,7 @@ import re
 
 min_open_interest = 10
 max_ask = 10
+min_ask = 1
 max_days = 45
 min_days = 21
 max_attempts = 3
@@ -155,6 +156,10 @@ def get_call_data ( symbol, call_id, price ):
 
 	if float(call_data["ask"]) > max_ask:
 		print "Skipping call id '{0}', ask price is too high ({1})".format( call_id, call_data["ask"] )
+		return None
+
+	if float(call_data["ask"]) <= min_ask:
+		print "Skipping call id '{0}', ask price is too low ({1})".format( call_id, call_data["ask"] )
 		return None
 
 	if call_data["openInterest"] < min_open_interest:
