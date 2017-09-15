@@ -6,13 +6,13 @@ import re
 
 min_open_interest = 10
 max_ask = 10
-min_ask = 1
+min_ask = .01
 max_days = 45
-min_days = 21
+min_days = 23
 max_attempts = 3
 max_pe_ratio = 30
 min_yield = 1
-max_price = 100
+max_price = 400
 
 break_even_percent = 2
 min_break_even_factor = 1 + ( break_even_percent / 100.0 )
@@ -26,7 +26,7 @@ commission_cost = 7.73
 
 base_url = "http://www.marketwatch.com/investing/stock/"
 
-output_csv = "./call_options.csv"
+output_csv_basename = "./call_options"
 
 def get_symbols ( filename ):
 	symbols = list()
@@ -263,6 +263,7 @@ for symbol in symbols:
 			good_call = (symbol,data["price"],data["P/E Ratio"],data["Yield"],data["Ex-Dividend Date"],date_key,strike,ask)
 			viable_calls.add ( good_call )
 
+output_csv = "{0}-{1}.csv".format ( output_csv_basename, int(time.time()) )
 f = file ( output_csv, "w" )
 f.write ( "Symbol,Price,P/E Ratio,Yield,Ex-Dividend Date,Expiration Date,Strike Price,Ask,Break Even,Cost,Price at +{0}%,Proceeds at +{0}%,Gain$ at +{0}%, Gain% at +{0}%\n".format ( target_price_percent ) )
 
