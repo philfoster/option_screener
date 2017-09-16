@@ -1,14 +1,38 @@
 Option Screener
-	- The purpose of the option screener is to look for Call options that require very little upward movement in the underlying security in order to turn a profit
+	The purpose of the option screener is to look for Call options that 
+	require very little upward movement in the underlying security in order 
+	to turn a profit.
 
 
-Usage:
-	screener [<options>] --expiration-date <YYYY-MM-DD>
+usage: screener.py [-h] [--file FILENAME] [--symbol SYMBOL]
+                   [--commission COMMISSION_COST] [--max_price MAX_PRICE]
+                   [--yield MIN_YIELD] [--pe_ratio MAX_PE_RATIO]
+                   [--open_interest MIN_OPEN_INTEREST] [--min_days MIN_DAYS]
+                   [--max_days MAX_DAYS] [--min_ask MIN_ASK]
+                   [--max_ask MAX_ASK] [--break_even BREAK_EVEN_PERCENT]
+                   [--min_price_target MIN_TARGET_PRICE_PERCENT]
+                   [--target_percent TARGET_PRICE_PERCENT]
 
-		[--file <ticker symbol file>]   a file containing ticker symbols, one per line
-		[--symbol <ticker symbol>]      a ticket symbol to evaulate
-		[--yield-threshold <value%>]    minimum dividend yield percentage
-		[--max-call-cost <value>]       maximum ask price for the call option
-		[--max-break-even <value%>]     maximum percentage gain to break even
-		[--max-pe-ratio <value>]        maximum P/E ratio
-		--expiration-date <YYYY-MM-DD>  options expiration date
+optional arguments:
+  -h, --help            show this help message and exit
+  --file FILENAME       File containing symbol list
+  --symbol SYMBOL       Symbol to search
+  --commission COMMISSION_COST
+                        Commission cost
+  --max_price MAX_PRICE
+                        Maximum share price
+  --yield MIN_YIELD     Minumum yield
+  --pe_ratio MAX_PE_RATIO
+                        Maximum P/E Ratio
+  --open_interest MIN_OPEN_INTEREST
+                        Minumum open interest
+  --min_days MIN_DAYS   Minimum days remaining
+  --max_days MAX_DAYS   Maximum days remaining
+  --min_ask MIN_ASK     Minumum ask price
+  --max_ask MAX_ASK     Maximum ask price
+  --break_even BREAK_EVEN_PERCENT
+                        Maximum break even percentage
+  --min_price_target MIN_TARGET_PRICE_PERCENT
+                        Maximum break even percentage
+  --target_percent TARGET_PRICE_PERCENT
+                        Maximum break even percentage

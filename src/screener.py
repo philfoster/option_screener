@@ -6,30 +6,25 @@ import re
 import argparse
 import logging
 
-min_open_interest = 10
-max_ask = 10
-min_ask = .01
-max_days = 45
-min_days = 23
-max_attempts = 3
-max_pe_ratio = 30
-min_yield = 1
-max_price = 400
+# Setup the defaults
+DEFAULT_SYMBOL_FILE = "symbols.txt"
+DEFAULT_MIN_YIELD = 1.0
+DEFAULT_MAX_PE_RATIO = 30
+DEFAULT_MIN_DAYS = 23
+DEFAULT_MAX_DAYS = 45
+DEFAULT_MAX_PRICE = 400
+DEFAULT_MIN_OPEN_INTEREST = 10
+DEFAULT_MAX_ASK = 5
+DEFAULT_MIN_ASK = .05
+DEFAULT_BREAK_EVEN_PERCENT = 2
+DEFAULT_MIN_TARGET_PRICE_PERCENT = 20
+DEFAULT_TARGET_PRICE_PERCENT = 5
+DEFAULT_COMMISSION_COST = 7.73
 
-break_even_percent = 2
-min_break_even_factor = 1 + ( break_even_percent / 100.0 )
-
-min_target_price_percent = 20
-min_target_price_factor = 1 + ( min_target_price_percent / 100.0 )
-
-target_price_percent = 5
-target_price_factor = 1 + ( target_price_percent / 100.0 )
-commission_cost = 7.73
-
-base_url = "http://www.marketwatch.com/investing/stock/"
-output_csv_basename = "./call_options"
-
-logging.basicConfig ( filename="screener.log", level=logging.DEBUG, format='%(asctime)s %(message)s')
+# Other defaults
+MAX_ATTEMPTS = 3
+BASE_URL = "http://www.marketwatch.com/investing/stock/"
+OUTPUT_BASENAME = "./call_options"
 
 def get_symbols ( filename ):
 	symbols = list()
@@ -46,13 +41,12 @@ def get_symbols ( filename ):
 	return symbols
 
 def get_details ( symbol ):
-	# http://www.marketwatch.com/investing/stock/<symbol>
 	details = dict()
 	details["symbol"] = symbol
 	details["Yield"] = "None"
 	details["Ex-Dividend Date"] = "None"
 	details["P/E Ratio"] = 99999
-	details_url = "{0}{1}".format ( base_url, symbol )
+	details_url = "{0}{1}".format ( BASE_URL, symbol )
 	page_data = fetch_url ( details_url )
 
 	#<li class="kv__item">
@@ -90,7 +84,8 @@ def get_details ( symbol ):
 		
 	return details
 
-def get_option_calls ( symbol, price ):
+def get_option_calls ( symbol, price, args ):
+	min_days = args.min_days
 	option_data = dict()
 	options_url = "https://finance.yahoo.com/quote/{0}/options?p={0}".format ( symbol )
 	now = time.time()
@@ -102,17 +97,17 @@ def get_option_calls ( symbol, price ):
 			continue
 
 		# Skip dates too far
-		if ( date - now ) > ( 86400 * max_days ):
+		if ( date - now ) > ( 86400 * args.max_days ):
 			logging.info ( "Date({0}): {1} is too far in the future".format( symbol, date ) )
 			continue
 
-		data = get_option_chain_by_date ( symbol, date, price )
+		data = get_option_chain_by_date ( symbol, date, price, args )
 		date_string = time.strftime('%Y-%m-%d',  time.gmtime(date))
 
 		option_data[date_string] = data
 	return option_data
 
-def get_option_chain_by_date ( symbol, date, price ):
+def get_option_chain_by_date ( symbol, date, price, args ):
 	calls = dict()
 	url = "https://finance.yahoo.com/quote/{0}/options?p={0}&date={1}".format ( symbol, date )
 
@@ -121,13 +116,13 @@ def get_option_chain_by_date ( symbol, date, price ):
 		match = re.search ( 'quote/(\S+)\?p=', call )
 		if match:
 			call_id = match.group(1)
-			call_data = get_call_data ( symbol, call_id, price )
+			call_data = get_call_data ( symbol, call_id, price, args )
 			if call_data:
 				calls[call_id] = call_data
 
 	return calls
 
-def get_call_data ( symbol, call_id, price ):
+def get_call_data ( symbol, call_id, price, args ):
 	call_data = dict()
 	call_data["ask"] = "unknown"
 	call_data["bid"] = "unknown"
@@ -157,15 +152,15 @@ def get_call_data ( symbol, call_id, price ):
 		logging.info ( "Skipping call id '{0}', ask price is unknown".format ( call_id ) )
 		return None
 
-	if float(call_data["ask"]) > max_ask:
+	if float(call_data["ask"]) > args.max_ask:
 		logging.info ( "Skipping call id '{0}', ask price is too high ({1})".format( call_id, call_data["ask"] ) )
 		return None
 
-	if float(call_data["ask"]) <= min_ask:
+	if float(call_data["ask"]) <= args.min_ask:
 		logging.info ( "Skipping call id '{0}', ask price is too low ({1})".format( call_id, call_data["ask"] ) )
 		return None
 
-	if call_data["openInterest"] < min_open_interest:
+	if call_data["openInterest"] < args.min_open_interest:
 		logging.info ( "Skipping call id '{0}', open interest is too low ({1})".format ( call_id, call_data["openInterest"] ) )
 		return None
 
@@ -173,17 +168,22 @@ def get_call_data ( symbol, call_id, price ):
 	# It should not take more than 2% climb in price to break even
 	break_even = float(call_data["strikePrice"]) + float(call_data["ask"])
 
+	# Setup factors
+	min_break_even_factor = 1 + ( args.break_even_percent / 100.0 )
+	min_target_price_factor = 1 + ( args.min_target_price_percent / 100.0 )
+	target_price_factor = 1 + ( args.target_price_percent / 100.0 )
+
 	min_viable_move = price * min_break_even_factor
 	logging.info ( "Examining {0} call ask {1} - break even at {2}".format ( call_data["strikePrice"], call_data["ask"], break_even ) )
 	if  break_even > min_viable_move:
-		logging.info ( "Skipping call id '{0}', break even point ({1}) is higher than price ({2}) plus {3}% ({4})".format ( call_id, break_even, price, break_even_percent, min_viable_move) )
+		logging.info ( "Skipping call id '{0}', break even point ({1}) is higher than price ({2}) plus {3}% ({4})".format ( call_id, break_even, price, args.break_even_percent, min_viable_move) )
 		return None
 
 	# Check to see if a 5% upswing yields a big enough gain
-	cost_to_buy = 100 * call_data["ask"] + commission_cost
+	cost_to_buy = 100 * call_data["ask"] + args.commission_cost
 	target_price = price * target_price_factor
 	gain_at_target_price = target_price - price
-	proceeds = ( gain_at_target_price * 100 ) - commission_cost
+	proceeds = ( gain_at_target_price * 100 ) - args.commission_cost
 
 	if proceeds < ( cost_to_buy * min_target_price_factor ):
 		logging.info ( "Skipping call id '{0}', proceeds ({1}) are less than minimum target price factor ({2})".format ( call_id, proceeds, cost_to_buy * min_target_price_factor ) )
@@ -206,7 +206,7 @@ def fetch_url ( url ):
 	logging.debug ( "Fetching {0}".format( url ) )
 	page_data = None
 	attempts = 1
-	while ( attempts <= max_attempts ):
+	while ( attempts <= MAX_ATTEMPTS ):
 		try:
 			page_data = urlread ( url )
 			break
@@ -218,7 +218,7 @@ def fetch_url ( url ):
 
 	return page_data
 
-def get_viable_options ( symbols ):
+def get_viable_options ( symbols, args ):
 	viable_calls = set()
 
 	for symbol in symbols:
@@ -228,12 +228,14 @@ def get_viable_options ( symbols ):
 		data = get_details ( symbol )
 
 		# Check the price
-		if float(data["price"]) > max_price:
+		if float(data["price"]) > args.max_price:
+			print "Skipping {0}, price is too high {1}".format ( symbol, data["price"] )
 			logging.info ( "Skipping {0}, price is too high {1}".format ( symbol, data["price"] ) )
 			continue
 
 		# Check the p/e ratio
-		if float(data["P/E Ratio"]) > max_pe_ratio:
+		if float(data["P/E Ratio"]) > args.max_pe_ratio:
+			print "Skipping {0}, P/E Ration is too high {1}".format ( symbol, data["P/E Ratio"] )
 			logging.info ( "Skipping {0}, P/E Ration is too high {1}".format ( symbol, data["P/E Ratio"] ) )
 			continue
 
@@ -241,7 +243,8 @@ def get_viable_options ( symbols ):
 		yield_match = re.search ( '^([\d\.]+)\%?', data["Yield"] )
 		if yield_match:
 			div_yield = yield_match.group(1)
-			if float(div_yield) < min_yield:
+			if float(div_yield) < args.min_yield:
+				print "Skipping {0}, yield is too low {1}".format ( symbol, data["Yield"] )
 				logging.info ( "Skipping {0}, yield is too low {1}".format ( symbol, data["Yield"] ) )
 				continue
 		else:
@@ -249,7 +252,7 @@ def get_viable_options ( symbols ):
 			continue
 
 		# Option chain
-		data["call_options"] = get_option_calls ( symbol, float(data["price"]) )
+		data["call_options"] = get_option_calls ( symbol, float(data["price"]), args )
 		logging.debug ( data )
 		
 		print "--------------\n"
@@ -263,8 +266,8 @@ def get_viable_options ( symbols ):
 				bid = data["call_options"][date_key][call_id]["bid"]
 				ask = data["call_options"][date_key][call_id]["ask"]
 				strike = data["call_options"][date_key][call_id]["strikePrice"]
-				print "Viable option: {0} {1} call ask {2}".format( date_key, strike, ask )
-				logging.info ( "Viable option: {0} {1} call ask {2}".format( date_key, strike, ask ) )
+				print "Viable option: {0} {1} {2} call ask {3}".format( symbol, date_key, strike, ask )
+				logging.info ( "Viable option: {0} {1} {2} call ask {3}".format( symbol, date_key, strike, ask ) )
 
 				good_call = (symbol,data["price"],data["P/E Ratio"],data["Yield"],data["Ex-Dividend Date"],date_key,strike,ask)
 				viable_calls.add ( good_call )
@@ -273,17 +276,50 @@ def get_viable_options ( symbols ):
 
 
 def main():
-	symbols = get_symbols ( "symbols.txt" )
-	viable_calls = get_viable_options ( symbols )
 
-	if viable_calls is None:
+	# Setup the argument parsing
+	parser = argparse.ArgumentParser()
+	parser.add_argument('--file', dest='filename', help="File containing symbol list", default=DEFAULT_SYMBOL_FILE)
+	parser.add_argument('--symbol', dest='symbol', help="Symbol to search" )
+	parser.add_argument('--commission', dest='commission_cost', help="Commission cost", default=DEFAULT_COMMISSION_COST )
+	parser.add_argument('--max_price', dest='max_price', type=float, help="Maximum share price", default=DEFAULT_MAX_PRICE)
+	parser.add_argument('--yield', dest='min_yield', type=float, help="Minumum yield", default=DEFAULT_MIN_YIELD)
+	parser.add_argument('--pe_ratio', dest='max_pe_ratio', type=float, help="Maximum P/E Ratio", default=DEFAULT_MAX_PE_RATIO)
+	parser.add_argument('--open_interest', dest='min_open_interest', type=float, help="Minumum open interest", default=DEFAULT_MIN_OPEN_INTEREST)
+	parser.add_argument('--min_days', dest='min_days', type=float, help="Minimum days remaining", default=DEFAULT_MIN_DAYS)
+	parser.add_argument('--max_days', dest='max_days', type=float, help="Maximum days remaining", default=DEFAULT_MAX_DAYS)
+	parser.add_argument('--min_ask', dest='min_ask', type=float, help="Minumum ask price", default=DEFAULT_MIN_ASK)
+	parser.add_argument('--max_ask', dest='max_ask', type=float, help="Maximum ask price", default=DEFAULT_MAX_ASK)
+	parser.add_argument('--break_even', dest='break_even_percent', type=float, help="Maximum break even percentage", default=DEFAULT_BREAK_EVEN_PERCENT)
+	parser.add_argument('--min_price_target', dest='min_target_price_percent', type=float, help="Maximum break even percentage", default=DEFAULT_MIN_TARGET_PRICE_PERCENT)
+	parser.add_argument('--target_percent', dest='target_price_percent', type=float, help="Maximum break even percentage", default=DEFAULT_TARGET_PRICE_PERCENT)
+
+	# Process the args
+	args = parser.parse_args()
+	symbol_file = args.filename
+
+	symbol_list = list()
+
+	if args.symbol:
+		symbol_list.append ( args.symbol )
+	else:
+		symbol_list = get_symbols ( symbol_file )
+		
+	logging.basicConfig ( filename="screener.log", level=logging.DEBUG, format='%(asctime)s %(message)s')
+
+	viable_calls = get_viable_options ( symbol_list, args )
+
+	if not viable_calls:
 		logging.info( "No viable calls detected" )
 		print "No viable calls detected"
 		exit ( 0 )
 
-	output_csv = "{0}-{1}.csv".format ( output_csv_basename, int(time.time()) )
+	output_csv = "{0}-{1}.csv".format ( OUTPUT_BASENAME, int(time.time()) )
 	f = file ( output_csv, "w" )
-	f.write ( "Symbol,Price,P/E Ratio,Yield,Ex-Dividend Date,Expiration Date,Strike Price,Ask,Break Even,Cost,Price at +{0}%,Proceeds at +{0}%,Gain$ at +{0}%, Gain% at +{0}%\n".format ( target_price_percent ) )
+	f.write ( "Symbol,Price,P/E Ratio,Yield,Ex-Dividend Date,Expiration Date,Strike Price,Ask,Break Even,Cost,Price at +{0}%,Proceeds at +{0}%,Gain$ at +{0}%, Gain% at +{0}%\n".format ( args.target_price_percent ) )
+
+	# Setup factors
+	target_price_factor = 1 + ( args.target_price_percent / 100.0 )
 
 	logging.info ( "Writing results to {0}".format(output_csv) )
 	print "Writing results to {0}".format(output_csv)
@@ -292,9 +328,9 @@ def main():
 
 		price_at_target = float(price) * target_price_factor
 		gain_at_target = price_at_target - strike
-		proceeds_at_target = ( gain_at_target * 100 ) - commission_cost
+		proceeds_at_target = ( gain_at_target * 100 ) - args.commission_cost
 
-		cost_to_buy = ( ask * 100 ) + commission_cost
+		cost_to_buy = ( ask * 100 ) + args.commission_cost
 
 		profit_dollars = proceeds_at_target - cost_to_buy
 		profit_percent = ( profit_dollars / cost_to_buy )
