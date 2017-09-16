@@ -235,8 +235,8 @@ def get_viable_options ( symbols, args ):
 
 		# Check the p/e ratio
 		if float(data["P/E Ratio"]) > args.max_pe_ratio:
-			print "Skipping {0}, P/E Ration is too high {1}".format ( symbol, data["P/E Ratio"] )
-			logging.info ( "Skipping {0}, P/E Ration is too high {1}".format ( symbol, data["P/E Ratio"] ) )
+			print "Skipping {0}, P/E Ratio is too high {1}".format ( symbol, data["P/E Ratio"] )
+			logging.info ( "Skipping {0}, P/E Ratio is too high {1}".format ( symbol, data["P/E Ratio"] ) )
 			continue
 
 		# Check the yield
