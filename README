@@ -1,37 +1,37 @@
 Option Screener
-	The purpose of the option screener is to look for Call options that 
-	require very little upward movement in the underlying security in order 
-	to turn a profit.
+    The purpose of the option screener is to look for Call options that 
+    require very little upward movement in the underlying security in order 
+    to turn a profit.
 
-	The idea is to try to eliminate some of the risk involved in call option
-	trading by selecting call options where the underlying issue does not
-	require a significant upward movement in order to break even and (hopefully)
-	make a profit. 
+    The idea is to try to eliminate some of the risk involved in call option
+    trading by selecting call options where the underlying issue does not
+    require a significant upward movement in order to break even and (hopefully)
+    make a profit. 
 
-	The conservative focus on P/E ratio and yield is to eliminate stocks that 
-	might be more volatile, with the idea being that a stock with a decent yield 
-	is probably not going to have a huge loss in the call expiration period. 
-	This is, of course, just a superfical argument, and the yield and P/E can be
-	adjusted with command line arguments.
-	
+    The conservative focus on P/E ratio and yield is to eliminate stocks that 
+    might be more volatile, with the idea being that a stock with a decent yield 
+    is probably not going to have a huge loss in the call expiration period. 
+    This is, of course, just a superfical argument, and the yield and P/E can be
+    adjusted with command line arguments.
+    
 
 Output CSV explained:
-	Symbol 				- ticker symbol
-	Price				- current price listing
-	P/E Ratio			- current price to earnings ratio
-	Yield				- dividend yield
-	Ex-Dividend Date	- date of the next dividend capture
-	Expiration Date		- expiration date of the call option
-	Strike Price		- strike price of the call option
-	Ask					- current ask price of the call
-	Break Even			- break even price on the call
-	Cost				- cost to purchase the call
-	Price at +5%		- price of the underlying issue in a hypothetical +X % 
-						  gain in share price
-	Proceeds at +5%		- proceeds returned from a hypothetical +X % gain in
-						  share price
-	Gain$ at +5%		- profit at +X % increase in the underlying share price
-	Gain% at +5%		- profit% at +X % increase in the underlying share price
+    Symbol               - ticker symbol
+    Price                - current price listing
+    P/E Ratio            - current price to earnings ratio
+    Yield                - dividend yield
+    Ex-Dividend Date     - date of the next dividend capture
+    Expiration Date      - expiration date of the call option
+    Strike Price         - strike price of the call option
+    Ask                  - current ask price of the call
+    Break Even           - break even price on the call
+    Cost                 - cost to purchase the call
+    Price at +5%         - price of the underlying issue in a hypothetical +X % 
+                           gain in share price
+    Proceeds at +5%      - proceeds returned from a hypothetical +X % gain in
+                           share price
+    Gain$ at +5%         - profit at +X % increase in the underlying share price
+    Gain% at +5%         - profit% at +X % increase in the underlying share price
 
 
 usage: screener.py [-h] [--file FILENAME] [--symbol SYMBOL]
