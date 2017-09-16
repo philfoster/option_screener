@@ -255,12 +255,6 @@ def get_viable_options ( symbols, args ):
 		data["call_options"] = get_option_calls ( symbol, float(data["price"]), args )
 		logging.debug ( data )
 		
-		print "--------------\n"
-		print "Symbol: {0}".format ( symbol )
-		print "Price: {0}".format ( data["price"] )
-		print "P/E Ratio: {0}".format ( data["P/E Ratio"] )
-		print "Yield: {0}".format ( data["Yield"] )
-		print "Ex-Dividend Date: {0}".format ( data["Ex-Dividend Date"] )
 		for date_key in data["call_options"]:
 			for call_id in data["call_options"][date_key]:
 				bid = data["call_options"][date_key][call_id]["bid"]
@@ -291,8 +285,8 @@ def main():
 	parser.add_argument('--min_ask', dest='min_ask', type=float, help="Minumum ask price", default=DEFAULT_MIN_ASK)
 	parser.add_argument('--max_ask', dest='max_ask', type=float, help="Maximum ask price", default=DEFAULT_MAX_ASK)
 	parser.add_argument('--break_even', dest='break_even_percent', type=float, help="Maximum break even percentage", default=DEFAULT_BREAK_EVEN_PERCENT)
-	parser.add_argument('--min_price_target', dest='min_target_price_percent', type=float, help="Maximum break even percentage", default=DEFAULT_MIN_TARGET_PRICE_PERCENT)
-	parser.add_argument('--target_percent', dest='target_price_percent', type=float, help="Maximum break even percentage", default=DEFAULT_TARGET_PRICE_PERCENT)
+	parser.add_argument('--target_percent', dest='target_price_percent', type=float, help="Target price gain percent", default=DEFAULT_TARGET_PRICE_PERCENT)
+	parser.add_argument('--min_price_target', dest='min_target_price_percent', type=float, help="Minimum price target percentage on target price gain", default=DEFAULT_MIN_TARGET_PRICE_PERCENT)
 
 	# Process the args
 	args = parser.parse_args()

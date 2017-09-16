@@ -10,8 +10,8 @@ usage: screener.py [-h] [--file FILENAME] [--symbol SYMBOL]
                    [--open_interest MIN_OPEN_INTEREST] [--min_days MIN_DAYS]
                    [--max_days MAX_DAYS] [--min_ask MIN_ASK]
                    [--max_ask MAX_ASK] [--break_even BREAK_EVEN_PERCENT]
-                   [--min_price_target MIN_TARGET_PRICE_PERCENT]
                    [--target_percent TARGET_PRICE_PERCENT]
+                   [--min_price_target MIN_TARGET_PRICE_PERCENT]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -32,7 +32,7 @@ optional arguments:
   --max_ask MAX_ASK     Maximum ask price
   --break_even BREAK_EVEN_PERCENT
                         Maximum break even percentage
-  --min_price_target MIN_TARGET_PRICE_PERCENT
-                        Maximum break even percentage
   --target_percent TARGET_PRICE_PERCENT
-                        Maximum break even percentage
+                        Target price gain percent
+  --min_price_target MIN_TARGET_PRICE_PERCENT
+                        Minimum price target percentage on target price gain
