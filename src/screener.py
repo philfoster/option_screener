@@ -308,7 +308,10 @@ def main():
 		print "No viable calls detected"
 		exit ( 0 )
 
-	output_csv = "{0}-{1}.csv".format ( OUTPUT_BASENAME, int(time.time()) )
+	output_csv = "{0}.{1}.csv".format ( OUTPUT_BASENAME, time.strftime('%Y-%m-%d-%H-%M',  time.localtime()) )
+	if args.symbol:
+		output_csv = "{0}.{1}.{2}.csv".format ( OUTPUT_BASENAME, args.symbol, time.strftime('%Y-%m-%d-%H-%M',  time.localtime()) )
+
 	f = file ( output_csv, "w" )
 	f.write ( "Symbol,Price,P/E Ratio,Yield,Ex-Dividend Date,Expiration Date,Strike Price,Ask,Break Even,Cost,Price at +{0}%,Proceeds at +{0}%,Gain$ at +{0}%, Gain% at +{0}%\n".format ( args.target_price_percent ) )
 
