@@ -17,7 +17,7 @@ DEFAULT_MIN_OPEN_INTEREST = 10
 DEFAULT_MAX_ASK = 5
 DEFAULT_MIN_ASK = .05
 DEFAULT_BREAK_EVEN_PERCENT = 2
-DEFAULT_MIN_TARGET_PRICE_PERCENT = 80
+DEFAULT_MIN_TARGET_PRICE_PERCENT = 30
 DEFAULT_TARGET_PRICE_PERCENT = 3
 DEFAULT_COMMISSION_COST = 7.73
 
@@ -93,7 +93,7 @@ def get_option_calls ( symbol, price, args ):
 
         # Skip dates too soon
         if ( date - now ) < ( 86400 * min_days ):
-            logging.info ( "Date({0}): {1} is too soon".format( symbol, date ) )
+            logging.info ( "Date({0}): {1}({2}) is too soon".format( symbol, date, time.strftime('%y-%m-%d', time.gmtime(date) ) ) )
             continue
 
         # Skip dates too far
@@ -102,7 +102,7 @@ def get_option_calls ( symbol, price, args ):
             continue
 
         date_string = time.strftime('%Y-%m-%d',  time.gmtime(date))
-        logging.debug ( "fetching option chain for {0}/{1}".format ( symbol, date ) )
+        logging.debug ( "fetching option chain for {0}/{1}".format ( symbol, date_string ) )
         data = get_option_chain_by_date ( symbol, date, price, args )
 
         option_data[date_string] = data
