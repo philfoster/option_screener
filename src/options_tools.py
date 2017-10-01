@@ -64,7 +64,7 @@ def get_details ( symbol ):
         
     return details
 
-def get_option_calls ( symbol, price, args ):
+def get_put_options ( symbol, price, args ):
     min_days = args.min_days
     option_data = dict()
     options_url = "https://finance.yahoo.com/quote/{0}/options?p={0}".format ( symbol )
@@ -83,12 +83,51 @@ def get_option_calls ( symbol, price, args ):
 
         date_string = time.strftime('%Y-%m-%d',  time.gmtime(date))
         logging.debug ( "fetching option chain for {0}/{1}".format ( symbol, date_string ) )
-        data = get_option_chain_by_date ( symbol, date, price, args )
+        data = get_put_option_chain_by_date ( symbol, date, price, args )
 
         option_data[date_string] = data
     return option_data
 
-def get_option_chain_by_date ( symbol, date, price, args ):
+def get_call_options ( symbol, price, args ):
+    min_days = args.min_days
+    option_data = dict()
+    options_url = "https://finance.yahoo.com/quote/{0}/options?p={0}".format ( symbol )
+    now = time.time()
+    for date in get_option_dates ( options_url ):
+
+        # Skip dates too soon
+        if ( date - now ) < ( 86400 * min_days ):
+            logging.info ( "Date({0}): {1}({2}) is too soon".format( symbol, date, time.strftime('%y-%m-%d', time.gmtime(date) ) ) )
+            continue
+
+        # Skip dates too far
+        if ( date - now ) > ( 86400 * args.max_days ):
+            logging.info ( "Date({0}): {1}({2}) is too far in the future".format( symbol, date, time.strftime('%y-%m-%d', time.gmtime(date) ) ) )
+            continue
+
+        date_string = time.strftime('%Y-%m-%d',  time.gmtime(date))
+        logging.debug ( "fetching option chain for {0}/{1}".format ( symbol, date_string ) )
+        data = get_call_option_chain_by_date ( symbol, date, price, args )
+
+        option_data[date_string] = data
+    return option_data
+
+def get_put_option_chain_by_date ( symbol, date, price, args ):
+    puts = dict()
+    url = "https://finance.yahoo.com/quote/{0}/options?p={0}&date={1}".format ( symbol, date )
+
+    page_data = fetch_url ( url )
+    for put in re.findall ( '(href="/quote/\S+\d+P\d+\?p=)', page_data ):
+        match = re.search ( 'quote/(\S+)\?p=', put )
+        if match:
+            put_id = match.group(1)
+            put_data = get_put_data ( symbol, put_id, price, args )
+            if put_data:
+                puts[put_id] = put_data
+
+    return puts
+
+def get_call_option_chain_by_date ( symbol, date, price, args ):
     calls = dict()
     url = "https://finance.yahoo.com/quote/{0}/options?p={0}&date={1}".format ( symbol, date )
 
@@ -102,6 +141,39 @@ def get_option_chain_by_date ( symbol, date, price, args ):
                 calls[call_id] = call_data
 
     return calls
+
+def get_put_data ( symbol, put_id, price, args ):
+    put_data = dict()
+    put_data["ask"] = 0.0
+    put_data["bid"] = 0.0
+    put_data["strikePrice"] = 0.0
+    put_data["openInterest"] = 0
+    url = "https://finance.yahoo.com/quote/{0}?p={0}".format ( put_id )
+
+    page_data = fetch_url ( url )
+
+    ask_match = re.search ( '"ask":{"raw":([\d\.]+),', page_data )
+    if ask_match:
+        put_data["ask"] = float(ask_match.group(1))
+
+    bid_match = re.search ( '"bid":{"raw":([\d\.]+),', page_data )
+    if bid_match:
+        put_data["bid"] = float(bid_match.group(1))
+
+    strike_match = re.search ( '"strikePrice":{"raw":([\d\.]+),', page_data )
+    if strike_match:
+        put_data["strikePrice"] = float(strike_match.group(1))
+
+    int_match = re.search ( '"openInterest":{"raw":([\d\.]+),', page_data )
+    if int_match:
+        put_data["openInterest"] = int(int_match.group(1))
+
+    if put_data["ask"] == "unknown":
+        logging.info ( "Skipping put id '{0}', ask price is unknown".format ( put_id ) )
+        return None
+
+    # Check to see if it's a viable put
+    return put_data
 
 def get_call_data ( symbol, call_id, price, args ):
     call_data = dict()
@@ -233,7 +305,7 @@ def get_safe_calls ( symbols, args ):
             continue
 
         # Option chain
-        data["call_options"] = get_option_calls ( symbol, float(data["price"]), args )
+        data["call_options"] = get_call_options ( symbol, float(data["price"]), args )
         logging.debug ( data )
         
         for date_key in data["call_options"]:
@@ -249,3 +321,66 @@ def get_safe_calls ( symbols, args ):
 
     return viable_calls
 
+def get_earnings_miss_puts ( symbols, args ):
+    viable_puts = set()
+    for symbol in symbols:
+        logging.info ( "Looking for options on {0}".format ( symbol ) )
+        print "Looking for options on {0}".format ( symbol )
+        # Details data
+        data = get_details ( symbol )
+
+        # Option chain
+        data["put_options"] = get_put_options ( symbol, float(data["price"]), args )
+        logging.info ( data )
+
+        for date_key in data["put_options"]:
+            for put_id in data["put_options"][date_key]:
+                bid = data["put_options"][date_key][put_id]["bid"]
+                ask = data["put_options"][date_key][put_id]["ask"]
+                strike = data["put_options"][date_key][put_id]["strikePrice"]
+                open_interest = data["put_options"][date_key][put_id]["openInterest"]
+
+                if ask > args.max_ask:
+                    logging.info ( "Skipping put id '{0}', ask price is too high ({1})".format( put_id, ask ) )
+                    continue
+
+                if ask <= args.min_ask:
+                    logging.info ( "Skipping put id '{0}', ask price is too low ({1})".format( put_id, ask ) )
+                    continue
+
+                if open_interest < args.min_open_interest:
+                    logging.info ( "Skipping put id '{0}', open interest is too low ({1})".format ( put_id, open_interest ) )
+                    continue
+
+
+                # Setup factors
+                min_break_even_factor = 1 - ( args.break_even_percent / 100.0 )
+                min_target_price_factor = 1 - ( args.min_target_price_percent / 100.0 )
+                target_price_factor = 1 - ( args.target_price_percent / 100.0 )
+
+                min_viable_move = float(data["price"]) * min_break_even_factor
+
+                break_even_price = strike - ask
+
+                # If stock lost X% what would the price be?
+                target_price = float(data["price"]) * target_price_factor
+                cost_to_buy = ( 100 * ask ) + args.commission_cost
+
+                gain_at_target_price = float(data["price"]) - target_price
+                proceeds = ( gain_at_target_price * 100 ) - args.commission_cost
+
+                if min_viable_move > break_even_price:
+                    logging.info ( "Skipping put id '{0}', price({1}) minus {2}% loss({3}) is higher than break even price({4})".format ( put_id, data["price"], args.break_even_percent, min_viable_move, break_even_price ) )
+                    continue
+            
+                if proceeds < ( cost_to_buy * min_target_price_factor ):
+                    logging.info ( "Skipping put id '{0}', proceeds ({1}) are less than minimum target price factor ({2})".format ( put_id, proceeds, cost_to_buy * min_target_price_factor ) )
+                    return None
+
+                print "Viable option: {0} {1} {2} put ask {3}".format( symbol, date_key, strike, ask )
+                logging.info ( "Viable option: {0} {1} {2} put ask {3}".format( symbol, date_key, strike, ask ) )
+
+                good_put = (symbol,data["price"],data["P/E Ratio"],data["Yield"],data["Ex-Dividend Date"],date_key,strike,ask)
+                viable_puts.add ( good_put )
+        
+    return viable_puts
