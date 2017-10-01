@@ -247,6 +247,14 @@ def get_call_data ( symbol, call_id, price, args ):
 def get_option_dates ( url ):
     dates = list()
     page_data = fetch_url ( url )
+
+    # First option in the list (selected)
+    for option_string in re.findall ( '(<option selected="" value="\d+" data-reactid="\d+">\S+\s+\d+, 20\d\d</option>)', page_data ):
+        match = re.search ( 'option selected="" value="(\d+)"', option_string )
+        if match:
+            dates.append ( int( match.group(1) ) )
+
+    # All the other options in the list (not selected)
     for option_string in re.findall ( '(<option value="\d+" data-reactid="\d+">\S+\s+\d+, 20\d\d</option>)', page_data ):
         match = re.search ( 'option value="(\d+)"', option_string )
         if match:
