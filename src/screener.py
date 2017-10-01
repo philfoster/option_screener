@@ -43,7 +43,7 @@ def get_symbols ( filename ):
 def get_details ( symbol ):
     details = dict()
     details["symbol"] = symbol
-    details["Yield"] = "None"
+    details["Yield"] = "0.0"
     details["Ex-Dividend Date"] = "None"
     details["P/E Ratio"] = 99999
     details_url = "{0}{1}".format ( BASE_URL, symbol )
