@@ -249,14 +249,19 @@ def get_option_dates ( url ):
     dates = list()
 
     # Totally just faking this now
-    dates.append ( 1507248000 ); # Oct 6th
-    dates.append ( 1507852800 ); # Oct 13th
-    dates.append ( 1508457600 ); # Oct 20th
-    dates.append ( 1509062400 ); # Oct 27th
+    #dates.append ( 1507248000 ); # Oct 6th
+    #dates.append ( 1507852800 ); # Oct 13th
+    #dates.append ( 1508457600 ); # Oct 20th
+    #dates.append ( 1509062400 ); # Oct 27th
     dates.append ( 1509667200 ); # Nov 3rd
     dates.append ( 1510272000 ); # Nov 10th
     dates.append ( 1510876800 ); # Nov 17th
     dates.append ( 1513296000 ); # Dec 15th
+    dates.append ( 1513296000 + ( 1 * 7 * 86400 ) ); # +1 week
+    dates.append ( 1513296000 + ( 2 * 7 * 86400 ) ); # +2 week
+    dates.append ( 1513296000 + ( 3 * 7 * 86400 ) ); # +3 week
+    dates.append ( 1513296000 + ( 4 * 7 * 86400 ) ); # +4 week
+    dates.append ( 1513296000 + ( 5 * 7 * 86400 ) ); # +5 week
     return dates
     
 def fetch_url ( url ):
@@ -381,7 +386,7 @@ def get_earnings_miss_puts ( symbols, args ):
             
                 if proceeds < ( cost_to_buy * min_target_price_factor ):
                     logging.info ( "Skipping put id '{0}', proceeds ({1}) are less than minimum target price factor ({2})".format ( put_id, proceeds, cost_to_buy * min_target_price_factor ) )
-                    return None
+                    continue
 
                 print "Viable option: {0} {1} {2} put ask {3}".format( symbol, date_key, strike, ask )
                 logging.info ( "Viable option: {0} {1} {2} put ask {3}".format( symbol, date_key, strike, ask ) )
