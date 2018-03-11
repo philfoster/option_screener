@@ -72,3 +72,45 @@ In The Money Covered Call Screner - itm_cc_screener.py
     This script will find covered calls to purchase that have a fat time
     value. This will give a limited pay out, but in a short amount of
     time and with limit risk to the downside.
+
+    The idea here is to execute a Buy/Write covered call with a 
+    "deep in the money" strike price. This virtually guarantees that
+    the option will be exercised. The potential gain is all tied up in the
+    "time value" of the call option. The time value is the difference 
+    between the price, the bid and the strike:
+        time value = bid - ( price - strike )
+
+    Example: AT&T (T) current price: 37.05, strike price 35.0, bid 2.48
+        The total value of the call is the bid price (what someone will pay)
+        The intrinsic value of the call is the difference between the 
+        current price and the strike (37.05 - 35 = 2.05). Therefore, the
+        remaining value of the call option is the bid minus the instrincic
+        value (2.48 - 2.05 = 0.43). This exmaple yields a $43 profit on
+        a cost of $3457 (1.2% gain minus commissions), in a time period of
+        about fix weeks in this example. 
+
+    With a short turn around time, a 1% gain every six to eight
+    weeks would yield approximately 6% to 12%. Additionally, if the 
+    Ex-Dividend date falls between the current date and the expiration
+    date, you might also pick up the dividend, if the option is not
+    exercised until after the ex-dividend date, adding to the yield. 
+
+
+    CSV Output explained:
+        Symbol              - ticket symbol
+        Price               - current market price
+        P/E Ratio           - price/earnings ratio
+        Dividend Yield      - dividend yield
+        Ex-Dividend Date    - date of ownership for the next dividend
+        Expiration Date     - expiration date of the call option
+        Strike              - strike price of the call option
+        Bid                 - current bid price for the call option
+        Max gain$           - gain (in dollars) for selling the covered call 
+                              and having the option be exercised
+        Max gain%           - percentage gain on selling the call (and it
+                              being exercised)
+        Cost basis          - Cost basis of owning the stock after selling the call
+        Loss %              - % Loss it would take in the stock to start losing
+                              money
+        Out of Pocket       - how much is costs out of pocket to setup the covered call
+        

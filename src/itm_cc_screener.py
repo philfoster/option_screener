@@ -9,7 +9,7 @@ DEFAULT_SYMBOL_FILE = "symbols.txt"
 DEFAULT_MIN_YIELD = 1.0
 DEFAULT_MAX_PE_RATIO = 50
 DEFAULT_MIN_DAYS = 14
-DEFAULT_MAX_DAYS = 90
+DEFAULT_MAX_DAYS = 48
 DEFAULT_MIN_PRICE = 30
 DEFAULT_MAX_PRICE = 75
 DEFAULT_MAX_ASK = 100
@@ -114,8 +114,8 @@ def get_itm_covered_calls ( symbols, args ):
             continue
 
         if float(data["price"]) < args.min_price:
-            print "Skipping {0}, price is too high {1}".format ( symbol, data["price"] )
-            logging.info ( "Skipping {0}, price is too high {1}".format ( symbol, data["price"] ) )
+            print "Skipping {0}, price is too low {1}".format ( symbol, data["price"] )
+            logging.info ( "Skipping {0}, price is too low {1}".format ( symbol, data["price"] ) )
             continue
 
         # Check the p/e ratio
