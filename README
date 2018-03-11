@@ -66,3 +66,9 @@ optional arguments:
                         Target price gain percent
   --min_price_target MIN_TARGET_PRICE_PERCENT
                         Minimum price target percentage on target price gain
+
+
+In The Money Covered Call Screner - itm_cc_screener.py
+    This script will find covered calls to purchase that have a fat time
+    value. This will give a limited pay out, but in a short amount of
+    time and with limit risk to the downside.

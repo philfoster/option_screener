@@ -78,7 +78,7 @@ def get_put_options ( symbol, price, args ):
 
         # Skip dates too far
         if ( date - now ) > ( 86400 * args.max_days ):
-            logging.info ( "Date({0}): {1}({2}) is too far in the future".format( symbol, date, time.strftime('%y-%m-%d', time.gmtime(date) ) ) )
+            logging.info ( "Date({0}): {1}({2}) is too far in the future (max_days={3})".format( symbol, date, time.strftime('%y-%m-%d', time.gmtime(date) ), args.max_days ) )
             continue
 
         date_string = time.strftime('%Y-%m-%d',  time.gmtime(date))
@@ -257,11 +257,10 @@ def get_option_dates ( url ):
     dates.append ( 1510272000 ); # Nov 10th
     dates.append ( 1510876800 ); # Nov 17th
     dates.append ( 1513296000 ); # Dec 15th
-    dates.append ( 1513296000 + ( 1 * 7 * 86400 ) ); # +1 week
-    dates.append ( 1513296000 + ( 2 * 7 * 86400 ) ); # +2 week
-    dates.append ( 1513296000 + ( 3 * 7 * 86400 ) ); # +3 week
-    dates.append ( 1513296000 + ( 4 * 7 * 86400 ) ); # +4 week
-    dates.append ( 1513296000 + ( 5 * 7 * 86400 ) ); # +5 week
+
+    for count in range (1,100):
+        dates.append ( 1513296000 + ( count * 7 * 86400 ) );
+    
     return dates
     
 def fetch_url ( url ):
@@ -395,3 +394,80 @@ def get_earnings_miss_puts ( symbols, args ):
                 viable_puts.add ( good_put )
         
     return viable_puts
+
+def get_itm_call_option_chain_by_date ( symbol, date, price, args ):
+    calls = dict()
+    url = "https://finance.yahoo.com/quote/{0}/options?p={0}&date={1}".format ( symbol, date )
+
+    page_data = fetch_url ( url )
+    for call in re.findall ( '(href="/quote/\S+\d+C\d+\?p=)', page_data ):
+        match = re.search ( 'quote/(\S+)\?p=', call )
+        if match:
+            call_id = match.group(1)
+            call_data = get_itm_call_data ( symbol, call_id, price, args )
+            if call_data:
+                calls[call_id] = call_data
+
+    return calls
+
+def get_itm_call_options ( symbol, price, args ):
+    logging.debug ( "Fetching option chain" )
+    min_days = args.min_days
+    option_data = dict()
+    options_url = "https://finance.yahoo.com/quote/{0}/options?p={0}".format ( symbol )
+    now = time.time()
+    for date in get_option_dates ( options_url ):
+
+        # Skip dates too soon
+        if ( date - now ) < ( 86400 * min_days ):
+            logging.info ( "Date({0}): {1}({2}) is too soon".format( symbol, date, time.strftime('%y-%m-%d', time.gmtime(date) ) ) )
+            continue
+
+        # Skip dates too far
+        if ( date - now ) > ( 86400 * args.max_days ):
+            remaining = int ( ( date - now ) / 86400 )
+            logging.info ( "Date({0}): {1}({2}) is too far in the future (max_days={3})".format( symbol, date, time.strftime('%y-%m-%d', time.gmtime(date) ), args.max_days ) )
+            continue
+
+        date_string = time.strftime('%Y-%m-%d',  time.gmtime(date))
+        logging.debug ( "fetching option chain for {0}/{1}".format ( symbol, date_string ) )
+        data = get_itm_call_option_chain_by_date ( symbol, date, price, args )
+
+        option_data[date_string] = data
+
+    exit
+
+    return option_data
+
+def get_itm_call_data ( symbol, call_id, price, args ):
+    call_data = dict()
+    call_data["ask"] = "unknown"
+    call_data["bid"] = "unknown"
+    call_data["strikePrice"] = "unknown"
+    call_data["openInterest"] = 0
+    url = "https://finance.yahoo.com/quote/{0}?p={0}".format ( call_id )
+
+    page_data = fetch_url ( url )
+
+    ask_match = re.search ( '"ask":{"raw":([\d\.]+),', page_data )
+    if ask_match:
+        call_data["ask"] = float(ask_match.group(1))
+
+    bid_match = re.search ( '"bid":{"raw":([\d\.]+),', page_data )
+    if bid_match:
+        call_data["bid"] = float(bid_match.group(1))
+
+    strike_match = re.search ( '"strikePrice":{"raw":([\d\.]+),', page_data )
+    if strike_match:
+        call_data["strikePrice"] = float(strike_match.group(1))
+
+    int_match = re.search ( '"openInterest":{"raw":([\d\.]+),', page_data )
+    if int_match:
+        call_data["openInterest"] = int(int_match.group(1))
+
+    if call_data["ask"] == "unknown":
+        logging.info ( "Skipping call id '{0}', ask price is unknown".format ( call_id ) )
+        return None
+
+    return call_data
+
