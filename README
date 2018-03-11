@@ -71,7 +71,7 @@ optional arguments:
 In The Money Covered Call Screner - itm_cc_screener.py
     This script will find covered calls to purchase that have a fat time
     value. This will give a limited pay out, but in a short amount of
-    time and with limit risk to the downside.
+    time and with limited risk to the downside.
 
     The idea here is to execute a Buy/Write covered call with a 
     "deep in the money" strike price. This virtually guarantees that
@@ -85,15 +85,25 @@ In The Money Covered Call Screner - itm_cc_screener.py
         The intrinsic value of the call is the difference between the 
         current price and the strike (37.05 - 35 = 2.05). Therefore, the
         remaining value of the call option is the bid minus the instrincic
-        value (2.48 - 2.05 = 0.43). This exmaple yields a $43 profit on
+        value (2.48 - 2.05 = 0.43). This example yields a $43 profit on
         a cost of $3457 (1.2% gain minus commissions), in a time period of
         about fix weeks in this example. 
 
     With a short turn around time, a 1% gain every six to eight
-    weeks would yield approximately 6% to 12%. Additionally, if the 
+    weeks would yield approximately 6% to 9% annually. Additionally, if the 
     Ex-Dividend date falls between the current date and the expiration
     date, you might also pick up the dividend, if the option is not
-    exercised until after the ex-dividend date, adding to the yield. 
+    exercised until after the ex-dividend date, adding to the yield.
+    Obviously, fetching 2% every six to eight weeks would higher a yield APY,
+    in the neighborhood of 12% to 18%.
+
+    The downside risk is also limited. The stock would have to fall below
+    the cost basis (buy price minus option premium collected -- the bid). 
+    This value is represented in the CSV as 'Loss%'. Typicall this should
+    be higher than 10% to really limit the risk.
+
+    Ideally, you're looking for something with a high Gain% and a high Loss%.
+    Maybe Loss% is named poorly and should be something like "down side risk%".
 
 
     CSV Output explained:
@@ -110,7 +120,13 @@ In The Money Covered Call Screner - itm_cc_screener.py
         Max gain%           - percentage gain on selling the call (and it
                               being exercised)
         Cost basis          - Cost basis of owning the stock after selling the call
-        Loss %              - % Loss it would take in the stock to start losing
-                              money
+        Loss %              - Percentage loss it would take in the stock to start losing
+                              money.
         Out of Pocket       - how much is costs out of pocket to setup the covered call
         
+    TODO - 
+        - write to CSV
+        - make minimum gain% and loss% command line arguments
+        - calculate the days remaining for the call
+        - calculate the % gain per day (a 1% call in 5 days trumps a 2% gain in 20 days)
+            - this would help sorting
