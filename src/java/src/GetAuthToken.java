@@ -14,11 +14,16 @@ class GetAuthToken {
     public static void main ( String[] args ) {
         String key = args[0];
         String secret = args[1];
+        String environment = args[2];
+
         String filename = "auth_token.dat";
 
         AuthToken authToken = null;
 
         int env = EtradeTools.SANDBOX;
+        if ( environment.equals ( "live" ) ) {
+            env = EtradeTools.LIVE;
+        }
 
         try {
             authToken = EtradeTools.getAuthToken ( key, secret, env );

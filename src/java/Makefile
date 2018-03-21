@@ -6,18 +6,24 @@ JAR=dist/lib/EtradeTools.jar
 THIRD_PARTY_JARS:=$(shell find lib -name "*.jar" -print | xargs echo | sed 's/ /:/g' )
 CLASS_PATH=${THIRD_PARTY_JARS}:${JAR}
 
-.PHONY: run auth clean
+AUTH_TOKEN=auth_token.dat
+
+.PHONY: run clean
 
 all: clean run
 
-run: ${JAR}
+run: ${JAR} ${AUTH_TOKEN}
 	java -cp ${CLASS_PATH}:${JAR} ITMScreener
-	
-auth: ${JAR}
-	java -cp ${CLASS_PATH}:${JAR} GetAuthToken ${oauth_consumer_key} ${consumer_secret}
+
+${AUTH_TOKEN}: 
+	java -cp ${CLASS_PATH}:${JAR} GetAuthToken ${oauth_consumer_key} ${consumer_secret} ${environment}
 
 clean:
 	rm -f ${JAR}
+
+veryclean:
+	ant clean
+	rm -f ${AUTH_TOKEN}
 
 ${JAR}:
 	ant
