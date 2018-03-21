@@ -8,14 +8,16 @@ CLASS_PATH=${THIRD_PARTY_JARS}:${JAR}
 
 AUTH_TOKEN=auth_token.dat
 
-.PHONY: run clean ${AUTH_TOKEN}
+.PHONY: run clean ${JAR}
 
 all: clean run
 
-run: ${JAR} ${AUTH_TOKEN}
+run: ${AUTH_TOKEN}
+	@ Running screener
 	java -cp ${CLASS_PATH}:${JAR} com.discernative.ITMScreener
 
-${AUTH_TOKEN}: 
+${AUTH_TOKEN}: ${JAR}
+	@echo "Generating Auth Token"
 	java -cp ${CLASS_PATH}:${JAR} com.discernative.GetAuthToken ${oauth_consumer_key} ${consumer_secret} ${environment}
 
 clean:
