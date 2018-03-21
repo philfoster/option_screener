@@ -1,5 +1,6 @@
 include etrade.properties
-MAIN_NAME=ITMScreener
+AUTH_CLASS=com.discernative.GetAuthToken
+RUN_CLASS=com.discernative.ITMScreener
 
 JAR=dist/lib/EtradeTools.jar
 
@@ -14,11 +15,11 @@ all: clean run
 
 run: ${AUTH_TOKEN}
 	@ Running screener
-	java -cp ${CLASS_PATH}:${JAR} com.discernative.ITMScreener
+	java -cp ${CLASS_PATH}:${JAR} ${RUN_CLASS}
 
 ${AUTH_TOKEN}: ${JAR}
 	@echo "Generating Auth Token"
-	java -cp ${CLASS_PATH}:${JAR} com.discernative.GetAuthToken ${oauth_consumer_key} ${consumer_secret} ${environment}
+	java -cp ${CLASS_PATH}:${JAR} ${AUTH_CLASS} ${oauth_consumer_key} ${consumer_secret} ${environment}
 
 clean:
 	rm -f ${JAR}
