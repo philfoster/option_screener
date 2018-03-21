@@ -1,3 +1,4 @@
+package com.discernative;
 class AuthToken implements java.io.Serializable {
     private String key;
     private String secret;

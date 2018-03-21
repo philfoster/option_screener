@@ -8,15 +8,15 @@ CLASS_PATH=${THIRD_PARTY_JARS}:${JAR}
 
 AUTH_TOKEN=auth_token.dat
 
-.PHONY: run clean
+.PHONY: run clean ${AUTH_TOKEN}
 
 all: clean run
 
 run: ${JAR} ${AUTH_TOKEN}
-	java -cp ${CLASS_PATH}:${JAR} ITMScreener
+	java -cp ${CLASS_PATH}:${JAR} com.discernative.ITMScreener
 
 ${AUTH_TOKEN}: 
-	java -cp ${CLASS_PATH}:${JAR} GetAuthToken ${oauth_consumer_key} ${consumer_secret} ${environment}
+	java -cp ${CLASS_PATH}:${JAR} com.discernative.GetAuthToken ${oauth_consumer_key} ${consumer_secret} ${environment}
 
 clean:
 	rm -f ${JAR}
