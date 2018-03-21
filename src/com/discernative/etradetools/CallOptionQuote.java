@@ -1,4 +1,4 @@
-package com.discernative;
+package com.discernative.etradetools;
 import java.util.Calendar;
 class CallOptionQuote extends OptionChainQuote {
     public CallOptionQuote ( String symbol, Calendar date, Double strike ) {

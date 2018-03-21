@@ -1,4 +1,4 @@
-package com.discernative;
+package com.discernative.etradetools;
 import java.util.Calendar;
 
 abstract class OptionChainQuote {

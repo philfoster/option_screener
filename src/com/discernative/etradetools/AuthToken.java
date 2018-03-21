@@ -1,4 +1,4 @@
-package com.discernative;
+package com.discernative.etradetools;
 class AuthToken implements java.io.Serializable {
     private String key;
     private String secret;

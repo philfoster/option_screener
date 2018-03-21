@@ -1,4 +1,4 @@
-package com.discernative;
+package com.discernative.etradetools;
 import com.etrade.etws.account.Account;
 import com.etrade.etws.account.AccountListResponse;
 import com.etrade.etws.oauth.sdk.client.IOAuthClient;
@@ -30,10 +30,10 @@ class GetAuthToken {
             authToken = EtradeTools.getAuthToken ( key, secret, env );
         } catch ( IOException e ) {
             System.out.println ( "Caught exception: " + e );
-            return;
+            System.exit ( 1 );
         } catch ( ETWSException e ) {
             System.out.println ( "Caught exception: " + e );
-            return;
+            System.exit ( 1 );
         }
 
         serializeAuthToken ( filename, authToken );
