@@ -41,7 +41,7 @@ class EtradeTools {
     public static int LIVE = 1;
     public static int SANDBOX = 0;
 
-    public static int MAX_BATCH_SIZE = 1; // TODO - set this to 20 when using live key
+    public static int MAX_BATCH_SIZE = 20;
 
     public static AuthToken getAuthToken ( String key, String secret, int env ) throws IOException, ETWSException {
 
@@ -143,6 +143,12 @@ class EtradeTools {
         int count = 0;
         int total = 0;
 
+        int batchSize = MAX_BATCH_SIZE;
+
+        if ( authToken.getEnv() == SANDBOX ) {
+            batchSize = 1;
+        }
+
         System.out.println ( "Got " + count + " symbols" );
 
         ArrayList<String> batch = new ArrayList<String>();
@@ -151,7 +157,7 @@ class EtradeTools {
             batch.add ( symbols.get ( count ) );
             count++;
 
-            if ( count % MAX_BATCH_SIZE == 0 || count == symbols.size() ) {
+            if ( count % batchSize == 0 || count == symbols.size() ) {
                 try {
                     System.out.println ( "Fetching batch of size " + batch.size() );
                     total += batch.size();
