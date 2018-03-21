@@ -33,6 +33,7 @@ import java.io.ObjectInputStream;
 
 import java.math.BigDecimal;
 import java.lang.reflect.*;
+import java.util.regex.*;
 
 class EtradeTools {
 
@@ -286,11 +287,11 @@ class EtradeTools {
             return chain;
         }
 
-        for( OptionChainPair optionPair : optionChainResponse.getOptionPairs() )
-        {
-            if ( optionPair.getCallCount() > 0 ) {
+        ArrayList<String> symbolBatch = new ArrayList<String>();
 
-                // Process the call options
+        for( OptionChainPair optionPair : optionChainResponse.getOptionPairs() ) {
+            if ( optionPair.getCallCount() > 0 ) {
+                // Batch the call options
                 for ( CallOptionChain callChain : optionPair.getCall() ) {
                     String rootSymbol = callChain.getRootSymbol();
                     BigDecimal strike = callChain.getStrikePrice();
@@ -304,21 +305,8 @@ class EtradeTools {
                     // Fetch the call option quote
                     //          underlier:year:month:day:optiontype:strikePrice
                     String chainSymbol = new String ( String.format ( "%s:%d:%d:%d:%s:%f", symbol, theYear, theMonth, theDay, "CALL", strike ) );
-                    for ( QuoteData quoteData : getQuote ( authToken, chainSymbol ) ) {
-                        CallOptionQuote coq = new CallOptionQuote ( symbol, date, strike.doubleValue() );
 
-                        coq.setBid ( quoteData.getAll().getBid() );
-                        coq.setAsk ( quoteData.getAll().getAsk() );
-
-                        coq.setBidSize ( (int) quoteData.getAll().getBidSize() );
-                        coq.setAskSize ( (int) quoteData.getAll().getAskSize() );
-
-                        coq.setLastTrade ( quoteData.getAll().getLastTrade() );
-                        coq.setOpenInterest ( (int) quoteData.getAll().getOpenInterest() );
-
-                        chain.add ( coq );
-                    }
-
+                    symbolBatch.add ( chainSymbol );
                 }
             }
 
@@ -338,23 +326,52 @@ class EtradeTools {
                     // Fetch the put option quote
                     //          underlier:year:month:day:optiontype:strikePrice
                     String chainSymbol = new String ( String.format ( "%s:%d:%d:%d:%s:%f", symbol, theYear, theMonth, theDay, "PUT", strike ) );
-                    for ( QuoteData quoteData : getQuote ( authToken, chainSymbol ) ) {
-                        PutOptionQuote poq = new PutOptionQuote ( symbol, date, strike.doubleValue() );
 
-                        poq.setBid ( quoteData.getAll().getBid() );
-                        poq.setAsk ( quoteData.getAll().getAsk() );
-
-                        poq.setBidSize ( (int) quoteData.getAll().getBidSize() );
-                        poq.setAskSize ( (int) quoteData.getAll().getAskSize() );
-
-                        poq.setLastTrade ( quoteData.getAll().getLastTrade() );
-                        poq.setOpenInterest ( (int) quoteData.getAll().getOpenInterest() );
-
-                        chain.add ( poq );
-                    }
+                    symbolBatch.add ( chainSymbol );
                 }
             }
         }
+
+        Pattern regexPattern = Pattern.compile("\\$(\\d\\S*) (Call|Put)");
+
+        for ( String quoteSymbol : symbolBatch ) {
+            for ( QuoteData quoteData : getQuote ( authToken, quoteSymbol ) ) {
+
+                String symbolDesc = quoteData.getAll().getSymbolDesc();
+                String underlier = quoteData.getProduct().getSymbol();
+                Double strike = new Double ( 0.0 );
+
+                String type;
+
+                // GOOG Apr 16 '11 $350 Put
+                Matcher match = regexPattern.matcher(symbolDesc);
+                if ( match.find() ) {
+                    strike = new Double ( match.group(1) );
+                    type = match.group(2);
+                } else {
+                    continue;
+                }
+
+                OptionChainQuote quote;
+                if ( type.equals ( "Call" ) ) {
+                    quote = new CallOptionQuote ( underlier + "(" + symbolDesc + ")", date, strike.doubleValue() );
+                } else {
+                    quote = new PutOptionQuote ( underlier + "(" + symbolDesc + ")", date, strike.doubleValue() );
+                }
+
+                quote.setBid ( quoteData.getAll().getBid() );
+                quote.setAsk ( quoteData.getAll().getAsk() );
+
+                quote.setBidSize ( (int) quoteData.getAll().getBidSize() );
+                quote.setAskSize ( (int) quoteData.getAll().getAskSize() );
+
+                quote.setLastTrade ( quoteData.getAll().getLastTrade() );
+                quote.setOpenInterest ( (int) quoteData.getAll().getOpenInterest() );
+
+                chain.add ( quote );
+            }
+        }
+
         return chain;
     }
 
