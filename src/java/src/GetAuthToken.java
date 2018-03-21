@@ -12,8 +12,8 @@ import java.io.ObjectOutputStream;
 
 class GetAuthToken {
     public static void main ( String[] args ) {
-        String key = "56ae833f8340c29ac16479271b7a8832";
-        String secret = "4d7b35efabb5a65103cf8b2d586c2a8b";
+        String key = args[0];
+        String secret = args[1];
         String filename = "auth_token.dat";
 
         AuthToken authToken = null;

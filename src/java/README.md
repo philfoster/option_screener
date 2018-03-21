@@ -19,3 +19,8 @@
         etws-market-sdk-1.0.jar
         etws-oauth-sdk-1.0.jar
         etws-order-sdk-1.0.jar
+    4. Obtain your etrade API credentials and create a file called etrade.properties
+        Example:
+            # cat etrade.properties
+            oauth_consumer_key=<put your info here>
+            consumer_secret=<put your info here>

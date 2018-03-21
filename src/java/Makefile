@@ -1,3 +1,4 @@
+include etrade.properties
 MAIN_NAME=ITMScreener
 
 JAR=dist/lib/EtradeTools.jar
@@ -13,7 +14,7 @@ run: ${JAR}
 	java -cp ${CLASS_PATH}:${JAR} ITMScreener
 	
 auth: ${JAR}
-	java -cp ${CLASS_PATH}:${JAR} GetAuthToken
+	java -cp ${CLASS_PATH}:${JAR} GetAuthToken ${oauth_consumer_key} ${consumer_secret}
 
 clean:
 	rm -f ${JAR}

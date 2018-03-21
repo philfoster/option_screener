@@ -1,0 +1,4 @@
+etrade.properties
+auth_token.dat
+*.swp
+a.out
