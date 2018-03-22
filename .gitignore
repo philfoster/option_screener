@@ -4,3 +4,4 @@ auth_token.dat
 a.out
 lib
 build
+/bin/

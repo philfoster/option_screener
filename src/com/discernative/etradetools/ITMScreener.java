@@ -5,7 +5,6 @@
 package com.discernative.etradetools;
 import java.util.List;
 import java.util.Calendar;
-import com.etrade.etws.market.ExpirationDate;
 
 class ITMScreener {
     public static void main ( String[] args ) {

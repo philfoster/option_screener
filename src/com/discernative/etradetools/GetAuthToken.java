@@ -3,13 +3,7 @@
  * file 'LICENSE.txt', which is part of this source code package.
  */
 package com.discernative.etradetools;
-import com.etrade.etws.account.Account;
-import com.etrade.etws.account.AccountListResponse;
-import com.etrade.etws.oauth.sdk.client.IOAuthClient;
-import com.etrade.etws.oauth.sdk.client.OAuthClientImpl;
-import com.etrade.etws.oauth.sdk.common.Token;
-import com.etrade.etws.sdk.client.ClientRequest;
-import com.etrade.etws.sdk.client.Environment;
+
 import com.etrade.etws.sdk.common.ETWSException;
 import java.io.IOException;
 import java.io.FileOutputStream;

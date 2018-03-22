@@ -10,24 +10,19 @@ import com.etrade.etws.sdk.client.ClientRequest;
 import com.etrade.etws.sdk.client.Environment;
 import com.etrade.etws.sdk.common.ETWSException;
 
-import com.etrade.etws.market.AllQuote;
 import com.etrade.etws.market.DetailFlag;
 import com.etrade.etws.market.QuoteData;
-import com.etrade.etws.sdk.client.ClientRequest;
 import com.etrade.etws.sdk.client.MarketClient;
 import com.etrade.etws.market.QuoteResponse;
 
 import com.etrade.etws.market.OptionChainPair;
 import com.etrade.etws.market.OptionChainRequest;
 import com.etrade.etws.market.OptionChainResponse;
-import com.etrade.etws.market.PairType;
 import com.etrade.etws.market.CallOptionChain;
 import com.etrade.etws.market.PutOptionChain;
 import com.etrade.etws.market.ExpirationDate;
 import com.etrade.etws.market.OptionExpireDateGetRequest;
 import com.etrade.etws.market.OptionExpireDateGetResponse;
-import com.etrade.etws.market.OptionQuote;
-
 import java.io.IOException;
 import java.util.Scanner;
 import java.util.ArrayList;
@@ -128,6 +123,7 @@ class EtradeTools {
         
         String verificationCode = inputScanner.next();
     
+        inputScanner.close();
         return verificationCode;
     }
 
@@ -196,55 +192,6 @@ class EtradeTools {
         return allResponses;
     }
     
-
-    public static void getOptionChain ( AuthToken authToken ) {
-        ClientRequest clientRequest = getAccessRequest ( authToken );
-        MarketClient marketClient = new MarketClient(clientRequest);
-        OptionChainRequest req = new OptionChainRequest();
-        req.setExpirationMonth("1"); // example values
-        req.setExpirationYear("2018");
-        req.setChainType("CALLPUT"); // example values
-        req.setSkipAdjusted("FALSE");
-        req.setUnderlier("GOOG");
-        OptionChainResponse optionResponse = new OptionChainResponse();
-        try {
-            optionResponse = marketClient.getOptionChain(req);
-        } catch (IOException ex) {
-            System.out.println ( "caught exception: " + ex );
-            ex.printStackTrace();
-            System.exit(1);
-        } catch (ETWSException ex) {
-            System.out.println ( "caught exception: " + ex );
-            ex.printStackTrace();
-            System.exit(1);
-        }
-
-        // OptionExpireDateGetRequest req = new OptionExpireDateGetRequest();
-        // req.setUnderlier("GOOG"); // underlier = GOOG for example
-        // OptionExpireDateGetResponse response = client.getExpiryDates(req);
-
-            // if ( optionPair.getPairType() == PairType.CALLONLY ) {
-        for( OptionChainPair optionPair : optionResponse.getOptionPairs() ) {
-            if ( optionPair.getCallCount() > 0 ) {
-                for ( CallOptionChain callChain : optionPair.getCall() ) {
-                    String rootSymbol = callChain.getRootSymbol();
-                    BigDecimal strike = callChain.getStrikePrice();
-                    ExpirationDate date = callChain.getExpireDate();
-                    
-                    Integer day = date.getDay(); 
-                    String month = date.getMonth(); 
-                    Integer year = date.getYear(); 
-
-                }
-            }
-
-            if ( optionPair.getPutCount() > 0 ) {
-                for ( PutOptionChain putChain : optionPair.getPut() ) {
-                    System.out.println ( "Put: strike=" + putChain.getStrikePrice() ); 
-                }
-            }
-        }
-    }
     
     public static List<Calendar> getOptionExpirationDates ( AuthToken authToken, String symbol ) {
         ClientRequest accessRequest = getAccessRequest ( authToken );
@@ -277,13 +224,6 @@ class EtradeTools {
             
         }
         return dateList;
-    }
-
-    public static void showMethods ( Object obj ) {
-        Method[] methods = obj.getClass().getMethods();
-        for(Method method : methods){
-            System.out.println("method = " + method.getName());
-        }
     }
 
     public static List<OptionChainQuote> getOptionChainQuote ( AuthToken authToken, String symbol, Calendar date ) {
@@ -338,15 +278,13 @@ class EtradeTools {
             if ( optionPair.getCallCount() > 0 ) {
                 // Batch the call options
                 for ( CallOptionChain callChain : optionPair.getCall() ) {
-                    String rootSymbol = callChain.getRootSymbol();
                     BigDecimal strike = callChain.getStrikePrice();
                     ExpirationDate expDate = callChain.getExpireDate();
                     
                     Integer theDay = expDate.getDay(); 
                     Integer theMonth = new Integer ( expDate.getMonth() ); 
                     Integer theYear = expDate.getYear(); 
-                    String expiryType = expDate.getExpiryType(); 
-
+                    
                     // Fetch the call option quote
                     //          underlier:year:month:day:optiontype:strikePrice
                     String chainSymbol = new String ( String.format ( "%s:%d:%d:%d:%s:%f", symbol, theYear, theMonth, theDay, "CALL", strike ) );
@@ -359,15 +297,12 @@ class EtradeTools {
                 
                 // Process the put options
                 for ( PutOptionChain putChain : optionPair.getPut() ) {
-                    String rootSymbol = putChain.getRootSymbol();
                     BigDecimal strike = putChain.getStrikePrice();
                     ExpirationDate expDate = putChain.getExpireDate();
                     
                     Integer theDay = expDate.getDay(); 
                     Integer theMonth = new Integer ( expDate.getMonth() ); 
                     Integer theYear = expDate.getYear(); 
-                    String expiryType = expDate.getExpiryType(); 
-
                     // Fetch the put option quote
                     //          underlier:year:month:day:optiontype:strikePrice
                     String chainSymbol = new String ( String.format ( "%s:%d:%d:%d:%s:%f", symbol, theYear, theMonth, theDay, "PUT", strike ) );
