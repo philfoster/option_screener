@@ -34,6 +34,7 @@ import java.io.ObjectInputStream;
 import java.math.BigDecimal;
 import java.lang.reflect.*;
 import java.util.regex.*;
+import java.util.Properties;
 
 class EtradeTools {
 
@@ -55,6 +56,7 @@ class EtradeTools {
             clientRequest.setEnv( Environment.SANDBOX );
         }
 
+        clientRequest.setEnv( Environment.SANDBOX );
         clientRequest.setConsumerKey( key );
         clientRequest.setConsumerSecret( secret );
 
@@ -149,8 +151,6 @@ class EtradeTools {
             batchSize = 1;
         }
 
-        System.out.println ( "Got " + count + " symbols" );
-
         ArrayList<String> batch = new ArrayList<String>();
         while ( count < symbols.size() ) {
 
@@ -181,12 +181,6 @@ class EtradeTools {
                     allResponses.add ( q );
                 }
             }
-        }
-
-        if ( total == symbols.size() ) {
-            System.out.println ( "\n\n\nPerfect! we matched the right number\n\n\n" );
-        } else {
-            System.out.println ( "\n\n\nShit! we wanted " + symbols.size() + " but only got " + total );
         }
 
         return allResponses;
@@ -353,4 +347,65 @@ class EtradeTools {
         return chain;
     }
 
+    public static Properties getProperties ( String filename ) {
+        Properties props = new Properties();
+        FileInputStream propInputStream = null;
+
+        try {
+            propInputStream = new FileInputStream ( filename );
+            props = new Properties();
+            props.load ( propInputStream );
+        } catch ( Exception e ) {
+            e.printStackTrace();
+        } finally {
+            try { 
+                 propInputStream.close();
+            } catch ( Exception e ) {
+                e.printStackTrace();
+            }
+        }
+
+        return props;
+    }
+
+    public static ArrayList<StockQuote> getStockQuotes ( AuthToken authToken, ArrayList<String> symbols ) {
+        ArrayList<StockQuote> quoteList = new ArrayList<StockQuote>();
+
+        // Example date from getExDivDate(): 11/17/2009
+        Pattern regexPattern = Pattern.compile("^(\\d\\d)/(\\d\\d)/(\\d\\d\\d\\d)$");
+        for ( QuoteData quoteData : getQuote ( authToken, symbols ) ) {
+
+            String symbol = quoteData.getProduct().getSymbol();
+            Double lastTrade = quoteData.getAll().getLastTrade();
+            StockQuote q = new StockQuote ( symbol, lastTrade );
+
+            q.setAnnualDividend ( quoteData.getAll().getAnnualDividend() );
+            q.setDividend ( quoteData.getAll().getDividend() );
+            q.setEPS ( quoteData.getAll().getEps() );
+            q.setForwardEarnings ( quoteData.getAll().getEstEarnings() );
+            q.setHigh52 ( quoteData.getAll().getHigh52() );
+            q.setLow52 ( quoteData.getAll().getLow52() );
+
+            String exDateString = quoteData.getAll().getExDivDate();
+
+            Matcher match = regexPattern.matcher( exDateString );
+            if ( match.find() ) {
+                System.out.println ( "\n\nmatched date pattern\n\n" );
+                Integer day = new Integer ( match.group(1) );
+                Integer month = new Integer ( match.group(2) );
+                Integer year = new Integer ( match.group(3) );
+                Calendar exDate = Calendar.getInstance();
+                
+                exDate.set ( year, month, day, 0, 0, 0 );
+                q.setExDividendDate ( exDate );
+            } else {
+                System.out.println ( "\n\nfailed to match date pattern\n\n" );
+                q.setExDividendDate ( null );
+            }
+
+            quoteList.add ( q );
+        }
+
+        return quoteList;
+    }
 }

@@ -8,12 +8,21 @@ import com.etrade.etws.sdk.common.ETWSException;
 import java.io.IOException;
 import java.io.FileOutputStream;
 import java.io.ObjectOutputStream;
+import java.util.Properties;
 
 class GetAuthToken {
     public static void main ( String[] args ) {
-        String key = args[0];
-        String secret = args[1];
-        String environment = args[2];
+        String propertiesFile = args[0];
+
+        Properties argProperties = EtradeTools.getProperties ( propertiesFile );
+
+        String key = argProperties.getProperty ( "oauth_consumer_key" );
+        String secret = argProperties.getProperty ( "consumer_secret" );
+        String environment = argProperties.getProperty ( "environment" );
+
+        System.out.println ( "Key='" + key + "'" );
+        System.out.println ( "Secret='" + secret + "'" );
+        System.out.println ( "environment='" + environment + "'" );
 
         String filename = "auth_token.dat";
 
