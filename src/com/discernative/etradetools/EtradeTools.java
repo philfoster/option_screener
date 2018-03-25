@@ -55,7 +55,6 @@ class EtradeTools {
             clientRequest.setEnv( Environment.SANDBOX );
         }
 
-        clientRequest.setEnv( Environment.SANDBOX );
         clientRequest.setConsumerKey( key );
         clientRequest.setConsumerSecret( secret );
 
@@ -387,16 +386,14 @@ class EtradeTools {
 
             Matcher match = regexPattern.matcher( exDateString );
             if ( match.find() ) {
-                System.out.println ( "\n\nmatched date pattern\n\n" );
-                Integer day = new Integer ( match.group(1) );
-                Integer month = new Integer ( match.group(2) );
+                Integer month = new Integer ( match.group(1) );
+                Integer day = new Integer ( match.group(2) );
                 Integer year = new Integer ( match.group(3) );
                 Calendar exDate = Calendar.getInstance();
                 
                 exDate.set ( year, month, day, 0, 0, 0 );
                 q.setExDividendDate ( exDate );
             } else {
-                System.out.println ( "\n\nfailed to match date pattern\n\n" );
                 q.setExDividendDate ( null );
             }
 
