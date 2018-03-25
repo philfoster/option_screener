@@ -32,7 +32,7 @@ class StockQuote {
     public void setAnnualDividend  ( Double annualDividend ) { this.annualDividend = annualDividend; }
     public void setDividend        ( Double dividend ) { this.dividend = dividend; }
     public void setEPS             ( Double eps ) { this.eps = eps; }
-    public void setExDividendDate  ( Calendar exData ) { this.exDate = exDate; };
+    public void setExDividendDate  ( Calendar exDate ) { this.exDate = exDate; };
     public void setForwardEarnings ( Double forwardEps ) { this.forwardEps = forwardEps; }
     public void setHigh52          ( Double high52 ) { this.high52 = high52; }
     public void setLow52           ( Double low52 ) { this.low52 = low52; }
