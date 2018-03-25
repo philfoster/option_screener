@@ -4,7 +4,11 @@
  */
 package com.discernative.etradetools;
 class AuthToken implements java.io.Serializable {
-    private String key;
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = -1508089755055673095L;
+	private String key;
     private String secret;
     private String access_token;
     private String access_secret;

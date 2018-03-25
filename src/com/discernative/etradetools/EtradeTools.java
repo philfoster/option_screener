@@ -32,7 +32,6 @@ import java.io.FileInputStream;
 import java.io.ObjectInputStream;
 
 import java.math.BigDecimal;
-import java.lang.reflect.*;
 import java.util.regex.*;
 import java.util.Properties;
 
@@ -143,7 +142,6 @@ class EtradeTools {
         ArrayList<QuoteData> allResponses = new ArrayList<QuoteData>();
 
         int count = 0;
-        int total = 0;
 
         int batchSize = MAX_BATCH_SIZE;
 
@@ -160,7 +158,6 @@ class EtradeTools {
             if ( count % batchSize == 0 || count == symbols.size() ) {
                 try {
                     System.out.println ( "Fetching batch of size " + batch.size() );
-                    total += batch.size();
                     quoteResponse = marketClient.getQuote( batch, new Boolean(true), DetailFlag.ALL);
                 } catch (IOException ex) {
                     System.out.println ( "caught exception: " + ex );
