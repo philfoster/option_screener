@@ -4,12 +4,25 @@
  */
 package com.discernative.etradetools;
 import java.util.Properties;
+
+import com.etrade.etws.market.OptionQuote;
+
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.io.FileReader;
 import java.io.BufferedReader;
+import java.util.HashMap;
 
 class ITMScreener {
-    public static String DEFAULT_AUTH_TOKEN = "auth_token.dat";
+    private static final String DEFAULT_MIN_GAIN_PRCT_PROPERTY = "0.5";
+    private static final String DEFAULT_AUTH_TOKEN = "auth_token.dat";
+    private static final String DEFAULT_MIN_YIELD_PROPERTY = "1.0";
+    private static final String DEFAULT_MIN_DAYS_PROPERTY = "14";
+    private static final String DEFAULT_MAX_DAYS_PROPERTY = "60";
+    private static final String DEFAULT_COMMISSION_PROPERTY = "5.45";
+    
+    private static final long DAY_IN_SECONDS = 60 * 60 * 24;
+    private static final long DAY_IN_MILLIS = DAY_IN_SECONDS * 1000;
 
     public static void main ( String[] args ) {
         System.out.println ( "In the Money Covered Call Option Screener" );
@@ -35,37 +48,96 @@ class ITMScreener {
     }
 
     public static void screener ( AuthToken authToken, ArrayList<String> symbols, Properties props ) {
+    	Double minYield = new Double ( props.getProperty ("min_yeild", DEFAULT_MIN_YIELD_PROPERTY ) );
+    	Integer minDays = new Integer ( props.getProperty( "min_days", DEFAULT_MIN_DAYS_PROPERTY ) );
+    	Integer maxDays = new Integer ( props.getProperty( "max_days", DEFAULT_MAX_DAYS_PROPERTY ) );
+    	Double minGainPrct = new Double ( props.getProperty("min_prct_gain", DEFAULT_MIN_GAIN_PRCT_PROPERTY ));
+    	Double commission = new Double ( props.getProperty( "commission", DEFAULT_COMMISSION_PROPERTY ) );
+        
         ArrayList<StockQuote> quotes = EtradeTools.getStockQuotes ( authToken, symbols );
+        ArrayList<OptionChainQuote> keepers = new ArrayList<OptionChainQuote>();
+        HashMap<String, StockQuote> tickerMap = new HashMap<String, StockQuote>();
 
         for ( StockQuote quote : quotes ) {
             String symbol = quote.getSymbol();
             Double price = quote.getPrice();
+            
+            Calendar now = Calendar.getInstance();
+            long minDateMillis = now.getTimeInMillis() + ( minDays * DAY_IN_MILLIS );
+            long maxDateMillis = now.getTimeInMillis() + ( maxDays * DAY_IN_MILLIS );
+           
+            if ( quote.getYield() < minYield ) {
+                System.out.println( "skipping " + symbol + ", yield is too low" );
+                continue;
+            }
+            
+            System.out.println ( "\n\nfetching option chain data for " + symbol );               
 
-            System.out.println ( String.format( "%s is trading at %.2f", symbol, price ) );
-            System.out.println ( String.format( "\t%s: %s", "AnnualDividend", quote.getAnnualDividend() ) );
-            System.out.println ( String.format( "\t%s: %s", "Dividend", quote.getDividend() ) );
-            System.out.println ( String.format( "\t%s: %s", "EPS", quote.getEPS() ) );
-            System.out.println ( String.format( "\t%s: %s", "ExDividendDate", quote.getExDividendDateString() ) );
-            System.out.println ( String.format( "\t%s: %s", "High52", quote.getHigh52() ) );
-            System.out.println ( String.format( "\t%s: %s", "Low52", quote.getLow52() ) );
-            System.out.println ( String.format( "\t%s: %s", "PE", quote.getPE() ) );
-            System.out.println ( String.format( "\t%s: %s", "Yield", quote.getYield() ) );
-
-        /*
-            System.out.println ( "fetching optin chain data for " + quote.getSymbol() );
-            List<Calendar> expirationDates = EtradeTools.getOptionExpirationDates ( authToken, symbol );
+            if ( tickerMap.containsKey( symbol ) ) {
+                // Don't pull the dates and quotes again if the symbol is already in the map
+                // This likely will only affect the sandbox instance
+                continue;
+            }
+                      
+            ArrayList<Calendar> expirationDates = EtradeTools.getOptionExpirationDates ( authToken, symbol );
 
             for ( Calendar date : expirationDates ) {
-                List<OptionChainQuote> optionChainQuotes = EtradeTools.getOptionChainQuote ( authToken, symbol, date );
-
-                for ( OptionChainQuote quote : optionChainQuotes ) {
-                    System.out.println ( quote.toString() );
+                if ( date.getTimeInMillis() < minDateMillis ) {
+                    System.out.println("skipping date because it's too soon" );
+                    
+                    if ( authToken.getEnv() == EtradeTools.LIVE ) {
+                        continue;
+                    }
                 }
-                System.out.println ( "that is enough for now" );
-                System.exit ( 0 );
+                
+                if ( date.getTimeInMillis() > maxDateMillis ) {
+                    System.out.println("skipping date because it's too far away" );
+                    continue;
+                }
+                
+                ArrayList<OptionChainQuote> optionChainQuotes = EtradeTools.getOptionChainQuote ( authToken, symbol, date );
+                
+                for ( OptionChainQuote optionQuote : optionChainQuotes ) {
+                    Double intrinsicValue = quote.getPrice() - optionQuote.getStrikePrice();
+                    Double timeValue = optionQuote.getBid() - intrinsicValue;
+                    Double gain = timeValue - ( commission / 100 );
+                    Double gainPrct = ( 100 * gain ) / quote.getPrice();
+                   
+                    if ( gainPrct < minGainPrct ) {
+                        System.out.println( String.format( "skipping %s, the gain (%f) is too low (min=%f)", optionQuote.toString(), gain, minGainPrct ) );
+                        continue;
+                    }
+                    
+                    keepers.add( optionQuote );
+                }
+                
+                // Put the symbol into the map 
+                tickerMap.put (symbol, quote );                
             }
-        */
         }
+        
+        for ( OptionChainQuote oq : keepers ) {
+            String symbol = oq.getSymbol();
+            
+            StockQuote sq = tickerMap.get ( symbol );
+            
+            if ( sq == null ) {
+                System.out.println( String.format ( "Error: %s does not exist in the ticket map", symbol ) );
+                continue;
+            }
+            
+            Double intrinsicValue = sq.getPrice() - oq.getStrikePrice();
+            Double timeValue = oq.getBid() - intrinsicValue;
+            Double gain = timeValue - ( commission / 100 );
+            Double gainPrct = ( 100 * gain ) / sq.getPrice();
+            
+            if ( gainPrct < minGainPrct ) {
+                System.out.println( "skipping " + oq.toString() + ", the gain is too low: " + gainPrct );
+            }
+            
+            System.out.println( String.format( "Keeper: %s (gain=%f%%)", oq.toString(), gainPrct) );
+        }
+        
     }
 
     public static ArrayList<String> readSymbols ( String filename ) { 

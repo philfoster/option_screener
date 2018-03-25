@@ -183,7 +183,7 @@ class EtradeTools {
     }
     
     
-    public static List<Calendar> getOptionExpirationDates ( AuthToken authToken, String symbol ) {
+    public static ArrayList<Calendar> getOptionExpirationDates ( AuthToken authToken, String symbol ) {
         ClientRequest accessRequest = getAccessRequest ( authToken );
         MarketClient marketClient = new MarketClient( accessRequest );
 
@@ -202,7 +202,7 @@ class EtradeTools {
             System.exit(1);
         }
 
-        List<Calendar> dateList = new ArrayList<Calendar>();
+        ArrayList<Calendar> dateList = new ArrayList<Calendar>();
         for ( ExpirationDate eDate : optionExpireResponse.getExpireDates() ) {
             Integer day = eDate.getDay();
             Integer year = eDate.getYear();
@@ -216,11 +216,11 @@ class EtradeTools {
         return dateList;
     }
 
-    public static List<OptionChainQuote> getOptionChainQuote ( AuthToken authToken, String symbol, Calendar date ) {
+    public static ArrayList<OptionChainQuote> getOptionChainQuote ( AuthToken authToken, String symbol, Calendar date ) {
 
         ClientRequest accessRequest = getAccessRequest ( authToken );
         MarketClient marketClient = new MarketClient( accessRequest );
-        List<OptionChainQuote> chain = new ArrayList<OptionChainQuote>();
+        ArrayList<OptionChainQuote> chain = new ArrayList<OptionChainQuote>();
 
         // Get the option chain for a specific date and symbol
         // Foreach strike price
@@ -323,9 +323,9 @@ class EtradeTools {
 
             OptionChainQuote quote;
             if ( type.equals ( "Call" ) ) {
-                quote = new CallOptionQuote ( underlier + "(" + symbolDesc + ")", date, strike.doubleValue() );
+                quote = new CallOptionQuote ( underlier, date, strike.doubleValue() );
             } else {
-                quote = new PutOptionQuote ( underlier + "(" + symbolDesc + ")", date, strike.doubleValue() );
+                quote = new PutOptionQuote ( underlier, date, strike.doubleValue() );
             }
 
             quote.setBid ( quoteData.getAll().getBid() );
