@@ -215,8 +215,22 @@ class EtradeTools {
         }
         return dateList;
     }
-
+    
     public static ArrayList<OptionChainQuote> getOptionChainQuote ( AuthToken authToken, String symbol, Calendar date ) {
+        return getOptionChainQuote ( authToken, symbol, date, "CALLPUT" );
+    }
+    
+    public static ArrayList<OptionChainQuote> getCallOptionChainQuote ( AuthToken authToken, String symbol, Calendar date ) {
+        return getOptionChainQuote ( authToken, symbol, date, "CALL" );
+    }
+    
+    public static ArrayList<OptionChainQuote> getPutOptionChainQuote ( AuthToken authToken, String symbol, Calendar date ) {
+        return getOptionChainQuote ( authToken, symbol, date, "PUT" );
+    }
+    
+    public static ArrayList<OptionChainQuote> getOptionChainQuote ( AuthToken authToken, String symbol, Calendar date, String optionType ) {
+        
+    
 
         ClientRequest accessRequest = getAccessRequest ( authToken );
         MarketClient marketClient = new MarketClient( accessRequest );
@@ -243,7 +257,7 @@ class EtradeTools {
 
         ocReq.setExpirationMonth( month );
         ocReq.setExpirationYear( year );
-        ocReq.setChainType("CALLPUT"); // example values
+        ocReq.setChainType(optionType);
         ocReq.setSkipAdjusted("FALSE");
         ocReq.setUnderlier( symbol );
 

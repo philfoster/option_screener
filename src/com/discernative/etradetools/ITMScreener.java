@@ -95,13 +95,17 @@ class ITMScreener {
                     continue;
                 }
                 
-                ArrayList<OptionChainQuote> optionChainQuotes = EtradeTools.getOptionChainQuote ( authToken, symbol, date );
+                ArrayList<OptionChainQuote> optionChainQuotes = EtradeTools.getCallOptionChainQuote ( authToken, symbol, date );
                 
                 for ( OptionChainQuote optionQuote : optionChainQuotes ) {
                     Double intrinsicValue = quote.getPrice() - optionQuote.getStrikePrice();
                     Double timeValue = optionQuote.getBid() - intrinsicValue;
                     Double gain = timeValue - ( commission / 100 );
                     Double gainPrct = ( 100 * gain ) / quote.getPrice();
+                    
+                    if ( optionQuote.getStrikePrice() > quote.getPrice() ) {
+                        System.out.println( "skipping '" + optionQuote.toString() + "', it's out of the money" );
+                    }
                    
                     if ( gainPrct < minGainPrct ) {
                         System.out.println( String.format( "skipping %s, the gain (%f) is too low (min=%f)", optionQuote.toString(), gain, minGainPrct ) );
