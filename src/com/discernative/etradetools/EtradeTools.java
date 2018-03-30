@@ -209,8 +209,7 @@ class EtradeTools {
             Calendar c = Calendar.getInstance();
             c.set ( year, month, day, 0, 0, 0 );
             dateList.add ( c );
-            
-        }
+         }
         return dateList;
     }
     
