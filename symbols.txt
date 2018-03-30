@@ -1,6 +1,7 @@
 AAPL
 AXP
 BA
+BAC
 CAT
 CSCO
 CVX

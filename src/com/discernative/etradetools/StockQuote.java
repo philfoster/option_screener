@@ -4,6 +4,8 @@
  */
 package com.discernative.etradetools;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
 
 class StockQuote {
@@ -77,9 +79,8 @@ class StockQuote {
         if ( this.exDate == null ) {
             return "n/a";
         }
-        return String.format ( "%04d-%02d-%02d",
-            this.exDate.get ( Calendar.YEAR ),
-            this.exDate.get ( Calendar.MONTH ),
-            this.exDate.get ( Calendar.DAY_OF_MONTH ) );
+        DateFormat df = new SimpleDateFormat( "yyyy-MM-dd" );
+        return df.format ( this.exDate.getTime() );
+
     }
 }

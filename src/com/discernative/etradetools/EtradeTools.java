@@ -171,9 +171,7 @@ class EtradeTools {
                 // Now clear out the batch for the next run
                 batch.clear();
 
-                System.out.println ( "Number of quotes in the response: " + quoteResponse.getQuoteData().size() );
                 for ( QuoteData q : quoteResponse.getQuoteData() ) {
-                    System.out.println ( "Adding response for quote: " + q );
                     allResponses.add ( q );
                 }
             }
@@ -320,6 +318,12 @@ class EtradeTools {
 
         for ( QuoteData quoteData : getQuote ( authToken, symbolBatch ) ) {
 
+            if ( quoteData == null ) {
+                continue;
+            }
+            if ( quoteData.getAll() == null ) {
+                continue;
+            }
             String symbolDesc = quoteData.getAll().getSymbolDesc();
             String underlier = quoteData.getProduct().getSymbol();
             Double strike = new Double ( 0.0 );

@@ -4,6 +4,8 @@
  */
 package com.discernative.etradetools;
 import java.util.Calendar;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 
 abstract class OptionChainQuote {
     protected String symbol;
@@ -41,17 +43,21 @@ abstract class OptionChainQuote {
         int month = date.get ( Calendar.MONTH );
         int year = date.get ( Calendar.YEAR );
         int day = date.get ( Calendar.DAY_OF_MONTH );
-        return String.format( "%s, %d-%d-%d, %f %s (bid: %f, ask %f)", 
+        
+        return String.format( "%s, %s, %f %s (bid: %f, ask %f)", 
             this.symbol, 
-            year, 
-            month, 
-            day, 
+            this.getDateString(), 
             this.strike, 
             getType(), 
             this.bid, 
             this.ask );
     }
 
+    public String getDateString() {
+        DateFormat df = new SimpleDateFormat( "yyyy-MM-dd" );
+        return df.format ( this.date.getTime() );
+    }
+    
     public String getType() {
         return "unknown";
     }
