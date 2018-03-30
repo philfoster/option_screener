@@ -43,6 +43,7 @@ class ITMScreener {
         if ( authTokenFile == null ) {
             authTokenFile = DEFAULT_AUTH_TOKEN;
         }
+        
 
         String symbolFile = argProperties.getProperty ( "symbol_file" );
         if ( symbolFile == null ) {
