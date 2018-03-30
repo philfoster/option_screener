@@ -207,7 +207,7 @@ class EtradeTools {
             Integer month = new Integer ( eDate.getMonth() );
 
             Calendar c = Calendar.getInstance();
-            c.set ( year, month, day, 0, 0, 0 );
+            c.set ( year, month -1, day, 0, 0, 0 );
             dateList.add ( c );
          }
         return dateList;
@@ -242,7 +242,7 @@ class EtradeTools {
         // return the list
 
 
-        String month = new Integer( date.get ( Calendar.MONTH ) ).toString();
+        String month = new Integer( date.get ( Calendar.MONTH ) + 1 ).toString();
         String year = new Integer( date.get ( Calendar.YEAR ) ).toString();
 
         OptionChainRequest ocReq = new OptionChainRequest();
@@ -408,12 +408,13 @@ class EtradeTools {
                 Integer year = new Integer ( match.group(3) );
                 Calendar exDate = Calendar.getInstance();
                 
-                exDate.set ( year, month, day, 0, 0, 0 );
+                exDate.set ( year, month -1, day, 0, 0, 0 );
                 q.setExDividendDate ( exDate );
             } else {
                 q.setExDividendDate ( null );
             }
 
+          
             quoteList.add ( q );
         }
 

@@ -7,13 +7,13 @@ import java.util.Properties;
 
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.io.FileReader;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.HashMap;
 
 class ITMScreener {
@@ -101,13 +101,10 @@ class ITMScreener {
         ArrayList<OptionChainQuote> keepers = new ArrayList<OptionChainQuote>();
         HashMap<String, StockQuote> tickerMap = new HashMap<String, StockQuote>();
 
-        Calendar now = Calendar.getInstance();
-        long minDateMillis = now.getTimeInMillis() + ( minDays * DAY_IN_MILLIS );
-        long maxDateMillis = now.getTimeInMillis() + ( maxDays * DAY_IN_MILLIS );
+        Date now = new Date();
+        long minDateMillis = now.getTime() + ( minDays * DAY_IN_MILLIS );
+        long maxDateMillis = now.getTime() + ( maxDays * DAY_IN_MILLIS );
  
-        DateFormat df = new SimpleDateFormat("yyyy-MM-dd");
-        
-
         for ( StockQuote quote : quotes ) {
             String symbol = quote.getSymbol();
             
@@ -138,16 +135,20 @@ class ITMScreener {
             ArrayList<Calendar> expirationDates = EtradeTools.getOptionExpirationDates ( authToken, symbol );
 
             for ( Calendar date : expirationDates ) {
-                if ( date.getTimeInMillis() < minDateMillis ) {
-                    System.out.println("skipping date for " + symbol +", " + df.format ( date.getTime() ) + " because it's too soon (min=" + df.format( minDateMillis )+ ")" );
+                long deltaMillis = date.getTimeInMillis() - now.getTime();
+                int deltaDays = (int) ( deltaMillis / DAY_IN_MILLIS );
+                
+                
+                if ( deltaDays < minDays ) {
+                    System.out.println("skipping date for " + symbol +", " + formatDate ( date ) + " because it's too soon (min=" + minDays + " days, delta=" + deltaDays + ")" );
                     
                     if ( authToken.getEnv() == EtradeTools.LIVE ) {
                         continue;
                     }
                 }
                 
-                if ( date.getTimeInMillis() > maxDateMillis ) {
-                    System.out.println("skipping date for " + symbol + ", " + df.format ( date.getTime() ) + ", because it's too far away (max=" + df.format( maxDateMillis ) + ")" );
+                if ( deltaDays > maxDays ) {
+                    System.out.println("skipping date for " + symbol + ", " + formatDate ( date ) + ", because it's too far away (max=" + maxDays +" days, delta= " + deltaDays + ")" );
                     continue;
                 }
                 
@@ -190,7 +191,9 @@ class ITMScreener {
             }
         }
         
-        csv.add ( "Symbol, yield, expireDate, strike, bid, ask, gain, safety, days, gain basis points/day" );
+        // Header
+        String header = "Symbol, exDivDate, hasDiv, yield, expireDate, strike, bid, ask, gain, safety, days, gain basis points/day";
+        csv.add ( header );
         
         for ( OptionChainQuote oq : keepers ) {
             String symbol = oq.getSymbol();
@@ -214,20 +217,26 @@ class ITMScreener {
             Double gainPrct = ( 100 * gain ) / price;
             Double costBasis = ( price - oq.getBid() ) + ( commission / 100 );
             Double safetyNet = ( 1 - ( costBasis / price ) ) * 100;
-            long daysToExpire = (int) ( ( oq.getDate().getTimeInMillis() - now.getTimeInMillis() ) / DAY_IN_MILLIS ); 
+            long daysToExpire = (int) ( ( oq.getDate().getTimeInMillis() - now.getTime() ) / DAY_IN_MILLIS ); 
             
-            Double gainPointsPerDay = ( gainPrct / daysToExpire ) * 100;            
+            Double gainPointsPerDay = ( gainPrct / daysToExpire ) * 100;  
+            String hasDiv = "no";
+            if ( sq.getExDividendDate().getTimeInMillis() > now.getTime() && sq.getExDividendDate().getTimeInMillis() < oq.getDate().getTimeInMillis() ) {
+                hasDiv = "yes";
+            }
             
             if ( gainPrct < minGainPrct ) {
                 System.out.println( "skipping " + oq.toString() + ", the gain is too low: " + gainPrct );
                 continue;
             }
             
-            // Symbol, yield, expireDate, strike, bid, ask, gain, safety, days, gainPoints/day
+            // Symbol, exDivDate, hasDiv, yield, expireDate, strike, bid, ask, gain, safety, days, gainPoints/day
             
             csv.add (
-                String.format ( "%s,%.2f,%s,%.2f,%.2f,%.2f,%.2f%%,%.2f%%,%d,%.2f",
+                String.format ( "%s,%s,%s,%.2f,%s,%.2f,%.2f,%.2f,%.2f%%,%.2f%%,%d,%.2f",
                     oq.getSymbol(), 
+                    sq.getExDividendDateString(),
+                    hasDiv,
                     sq.getYield(),
                     oq.getDateString(), 
                     oq.getStrikePrice(), 
@@ -260,5 +269,9 @@ class ITMScreener {
         }
 
         return symbolList;
+    }
+    
+    public static String formatDate ( Calendar date ) {
+        return String.format ( "%04d-%02d-%02d", date.get( Calendar.YEAR ), date.get ( Calendar.MONTH ) + 1, date.get( Calendar.DAY_OF_MONTH ) );
     }
 }
