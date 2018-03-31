@@ -5,6 +5,7 @@
 package com.discernative.etradetools;
 
 import java.util.Calendar;
+import java.text.SimpleDateFormat;
 
 class StockQuote {
     protected String symbol = "n/a";
@@ -17,6 +18,8 @@ class StockQuote {
     protected Double   forwardEps = 0.0;
     protected Double   high52 = 0.0;
     protected Double   low52 = 0.0;
+    
+    private SimpleDateFormat dateFormatter = new SimpleDateFormat ( "yyyy-MM-dd" );
 
     public StockQuote ( String symbol, Double price ) {
         this.symbol = symbol;
@@ -83,7 +86,6 @@ class StockQuote {
         if ( this.exDate == null ) {
             return "n/a";
         }
-        return String.format ( "%04d-%02d-%02d", this.exDate.get( Calendar.YEAR ), this.exDate.get ( Calendar.MONTH ) + 1, this.exDate.get( Calendar.DAY_OF_MONTH ) );
-
+        return dateFormatter.format( this.exDate.getTime() );
     }
 }

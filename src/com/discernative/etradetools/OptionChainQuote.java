@@ -4,7 +4,7 @@
  */
 package com.discernative.etradetools;
 import java.util.Calendar;
-
+import java.text.SimpleDateFormat;
 
 abstract class OptionChainQuote {
     protected String symbol;
@@ -17,6 +17,7 @@ abstract class OptionChainQuote {
     protected Integer bidSize = 0;
     protected Integer askSize = 0;
     protected Double  lastTrade = 0.0;
+    protected SimpleDateFormat dateFormatter = new SimpleDateFormat ( "yyyy-MM-dd" );
     
     // Accessor methods
     public String   getSymbol () { return this.symbol; };
@@ -49,7 +50,7 @@ abstract class OptionChainQuote {
     }
 
     public String getDateString() {
-        return String.format ( "%04d-%02d-%02d", this.date.get( Calendar.YEAR ), this.date.get ( Calendar.MONTH ) + 1, this.date.get( Calendar.DAY_OF_MONTH ) );
+        return dateFormatter.format( this.date.getTime() ); 
     }
     
     public String getType() {

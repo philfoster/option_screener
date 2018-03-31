@@ -4,6 +4,7 @@
  */
 package com.discernative.etradetools;
 import java.util.Properties;
+import java.text.SimpleDateFormat;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -13,7 +14,6 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.text.DateFormat;
 import java.util.HashMap;
 
 class ITMScreener {
@@ -31,6 +31,8 @@ class ITMScreener {
     
     private static final long DAY_IN_SECONDS = 60 * 60 * 24;
     private static final long DAY_IN_MILLIS = DAY_IN_SECONDS * 1000;
+    
+    private static SimpleDateFormat dateFormatter = new SimpleDateFormat ( "yyyy-MM-dd" );
 
     public static void main ( String[] args ) {
         System.out.println ( "In the Money Covered Call Option Screener" );
@@ -45,7 +47,6 @@ class ITMScreener {
             authTokenFile = DEFAULT_AUTH_TOKEN;
         }
         
-
         String symbolFile = argProperties.getProperty ( "symbol_file" );
         if ( symbolFile == null ) {
             System.out.println ( "Error: no symbol_file defined in " + argProperties );
@@ -311,6 +312,6 @@ class ITMScreener {
     }
     
     public static String formatDate ( Calendar date ) {
-        return String.format ( "%04d-%02d-%02d", date.get( Calendar.YEAR ), date.get ( Calendar.MONTH ) + 1, date.get( Calendar.DAY_OF_MONTH ) );
+        return dateFormatter.format( date.getTime() );
     }
 }
