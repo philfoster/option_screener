@@ -57,6 +57,12 @@ class StockQuote {
              */
             return new Double ( 0 );
         }
+        
+        Double pe = this.price / this.eps;
+        if ( pe < 0 ) {
+            return 99999.99;
+        }
+        
         return this.price / this.eps;
     }
 

@@ -27,6 +27,7 @@ class ITMScreener {
     private static final String DEFAULT_MAX_PRICE_PROPERTY = "80.0";
     private static final String DEFAULT_MIN_BID_PROPERTY = "0.2";
     private static final String DEFAULT_MIN_SAFETY_NET_PROPERTY = "5.0";
+    private static final String DEFAULT_MAX_PE_PROPERTY = "100.0";
     
     private static final long DAY_IN_SECONDS = 60 * 60 * 24;
     private static final long DAY_IN_MILLIS = DAY_IN_SECONDS * 1000;
@@ -86,14 +87,15 @@ class ITMScreener {
 
     public static ArrayList<String> screener ( AuthToken authToken, ArrayList<String> symbols, Properties props ) {
     	Double minYield = new Double ( props.getProperty ("min_yeild", DEFAULT_MIN_YIELD_PROPERTY ) );
-    	Integer minDays = new Integer ( props.getProperty( "min_days", DEFAULT_MIN_DAYS_PROPERTY ) );
-    	Integer maxDays = new Integer ( props.getProperty( "max_days", DEFAULT_MAX_DAYS_PROPERTY ) );
-    	Double minGainPrct = new Double ( props.getProperty("min_prct_gain", DEFAULT_MIN_GAIN_PRCT_PROPERTY ));
-    	Double commission = new Double ( props.getProperty( "commission", DEFAULT_COMMISSION_PROPERTY ) );
-    	Double minPrice = new Double ( props.getProperty( "min_price", DEFAULT_MIN_PRICE_PROPERTY ) );
-    	Double maxPrice = new Double ( props.getProperty( "max_price", DEFAULT_MAX_PRICE_PROPERTY ) );
-    	Double minBid = new Double ( props.getProperty( "min_bid", DEFAULT_MIN_BID_PROPERTY ) );
-    	Double minSafetyNet = new Double ( props.getProperty( "min_safety_net", DEFAULT_MIN_SAFETY_NET_PROPERTY ) );
+    	Integer minDays = new Integer ( props.getProperty ( "min_days", DEFAULT_MIN_DAYS_PROPERTY ) );
+    	Integer maxDays = new Integer ( props.getProperty ( "max_days", DEFAULT_MAX_DAYS_PROPERTY ) );
+    	Double minGainPrct = new Double ( props.getProperty ("min_prct_gain", DEFAULT_MIN_GAIN_PRCT_PROPERTY ));
+    	Double commission = new Double ( props.getProperty ( "commission", DEFAULT_COMMISSION_PROPERTY ) );
+    	Double minPrice = new Double ( props.getProperty ( "min_price", DEFAULT_MIN_PRICE_PROPERTY ) );
+    	Double maxPrice = new Double ( props.getProperty ( "max_price", DEFAULT_MAX_PRICE_PROPERTY ) );
+    	Double minBid = new Double ( props.getProperty ( "min_bid", DEFAULT_MIN_BID_PROPERTY ) );
+    	Double minSafetyNet = new Double ( props.getProperty ( "min_safety_net", DEFAULT_MIN_SAFETY_NET_PROPERTY ) );
+    	Double maxPE = new Double ( props.getProperty ( "max_pe", DEFAULT_MAX_PE_PROPERTY ) );
     	
     	ArrayList<String> csv = new ArrayList<String>();
     	
@@ -102,8 +104,6 @@ class ITMScreener {
         HashMap<String, StockQuote> tickerMap = new HashMap<String, StockQuote>();
 
         Date now = new Date();
-        long minDateMillis = now.getTime() + ( minDays * DAY_IN_MILLIS );
-        long maxDateMillis = now.getTime() + ( maxDays * DAY_IN_MILLIS );
  
         for ( StockQuote quote : quotes ) {
             String symbol = quote.getSymbol();
@@ -111,6 +111,11 @@ class ITMScreener {
           
             if ( quote.getYield() < minYield ) {
                 System.out.println( "skipping " + symbol + ", yield is too low" );
+                continue;
+            }
+            
+            if ( quote.getPE() > maxPE && maxPE != 0 ) {
+                System.out.println( "skipping " + symbol + ", P/E Ratio is too high" );
                 continue;
             }
             
@@ -192,7 +197,7 @@ class ITMScreener {
         }
         
         // Header
-        String header = "Symbol, exDivDate, hasDiv, yield, expireDate, strike, bid, ask, gain, safety, days, gain basis points/day";
+        String header = "Symbol, price, p/e ratio, exDivDate, hasDiv, div, yield, cost, expireDate, strike, bid, ask, gain$, gain%, safety, days, gain basis points/day, gain% with div, safety with div, gain basis points/day with div";
         csv.add ( header );
         
         for ( OptionChainQuote oq : keepers ) {
@@ -214,38 +219,72 @@ class ITMScreener {
             Double intrinsicValue = price - oq.getStrikePrice();
             Double timeValue = oq.getBid() - intrinsicValue;
             Double gain = timeValue - ( commission / 100 );
+            Double dollarGain = gain * 100;
+            
             Double gainPrct = ( 100 * gain ) / price;
             Double costBasis = ( price - oq.getBid() ) + ( commission / 100 );
+            Double outOfPocket = costBasis * 100;
             Double safetyNet = ( 1 - ( costBasis / price ) ) * 100;
             long daysToExpire = (int) ( ( oq.getDate().getTimeInMillis() - now.getTime() ) / DAY_IN_MILLIS ); 
             
             Double gainPointsPerDay = ( gainPrct / daysToExpire ) * 100;  
             String hasDiv = "no";
-            if ( sq.getExDividendDate().getTimeInMillis() > now.getTime() && sq.getExDividendDate().getTimeInMillis() < oq.getDate().getTimeInMillis() ) {
-                hasDiv = "yes";
+            Boolean includeDiv = Boolean.FALSE;
+            
+            // Add in the dividend stuff
+            Double gainWithDiv = gain;
+            Double costBasisWithDiv = costBasis;
+            Double dollarGainWithDiv = dollarGain;
+            Double gainPrctWithDiv = gainPrct;
+            Double safetyNetWithDiv = safetyNet;
+            Double gainPointsPerDayWithDiv = gainPointsPerDay;
+            
+            
+            if ( sq.getExDividendDate() != null ) {
+                if ( sq.getExDividendDate().getTimeInMillis() > now.getTime() && sq.getExDividendDate().getTimeInMillis() < oq.getDate().getTimeInMillis() ) {
+                    hasDiv = "yes";
+                    includeDiv = Boolean.TRUE;
+                }
             }
             
+            if ( includeDiv ) {
+                gainWithDiv += sq.getDividend();
+                dollarGainWithDiv = gainWithDiv * 100;
+                gainPrctWithDiv = ( 100 * gainWithDiv ) / price;
+                costBasisWithDiv = ( price - oq.getBid() ) + ( commission / 100 ) - sq.getDividend();
+                safetyNetWithDiv = ( 1 - ( costBasisWithDiv / price ) ) * 100;
+                gainPointsPerDayWithDiv = ( gainPrctWithDiv / daysToExpire ) * 100;
+            }
+                
             if ( gainPrct < minGainPrct ) {
                 System.out.println( "skipping " + oq.toString() + ", the gain is too low: " + gainPrct );
                 continue;
             }
             
-            // Symbol, exDivDate, hasDiv, yield, expireDate, strike, bid, ask, gain, safety, days, gainPoints/day
+            // Symbol, price, p/e ratio, exDivDate, hasDiv, div, yield, cost, expireDate, strike, bid, ask, gain$, gain%, safety, days, gainPoints/day, gain% with div, safety with div, gainPoint/Day with div
             
             csv.add (
-                String.format ( "%s,%s,%s,%.2f,%s,%.2f,%.2f,%.2f,%.2f%%,%.2f%%,%d,%.2f",
+                String.format ( "%s,%.2f,%.2f,%s,%s,%.2f,%.2f,%.2f,%s,%.2f,%.2f,%.2f,%.2f,%.2f%%,%.2f%%,%d,%.2f,%.2f%%,%.2f,%.2f",
                     oq.getSymbol(), 
+                    sq.getPrice(),
+                    sq.getPE(),
                     sq.getExDividendDateString(),
                     hasDiv,
+                    sq.getDividend(),
                     sq.getYield(),
+                    outOfPocket,
                     oq.getDateString(), 
                     oq.getStrikePrice(), 
                     oq.getBid(), 
                     oq.getAsk(), 
+                    dollarGain,
                     gainPrct, 
                     safetyNet, 
                     daysToExpire, 
-                    gainPointsPerDay
+                    gainPointsPerDay,
+                    gainPrctWithDiv,
+                    safetyNetWithDiv,
+                    gainPointsPerDayWithDiv
                     ) 
                 );                             
         }
