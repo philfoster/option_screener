@@ -1,0 +1,57 @@
+Other ideas:
+    circuit breaker script
+        Find low cost 'put' options that pay out tremendously on a 5% loss
+        The purpose of this is to find a way to protect yourself from a total 
+        market collapse For example, buy 20x $0.10 puts on something pretty 
+        volatile that would react poorly to bad market, national or global news. 
+        The hope is that these puts are never executed, but if the entire 
+        market tanks, then these calls would pay off tremendously, covering any
+        losses from market collapse. This is entirely theoretical, there might
+        not be any puts that even come close to the parameters required to make
+        this viable. 
+           
+        How the math would work: the calls would have to be well below the 
+        current quote for the issue (maybe 5%) and the cost would have to be no
+        more than $0.20 so that buying 10 of them would result in a cost of less
+        than $200. The time frame would be 30 to 60 days out. At 10% drop in the
+        issue would have to pay out roughly the same as the total amount in call
+        options that the user has in the market at any given time. 
+
+        Example:    
+            A user is speculating with $2000 in options. For $200, the user buys
+            10x $0.20 calls. The 10x puts would have to be able to pay out 
+            around $2000 on a 10% drop. The script would attempt to find 'puts'
+            that meet this criteria. 
+
+
+    Overvalued screener
+        Find put options in companies that do not have earnings at all. These
+        companies should be significantly 'up' in the last few months and might
+        be vulnerable to bad news and drop 2% or 3%. The script would find the
+        put options for companies with less than stellar financials, have been
+        pushed higher in recent weeks and are pretty volatile. The puts must 
+        break even on a 2% loss. A 3% loss in the underlying issue should yield
+        a 50% gain on the 'put' option.
+
+
+    Earnings dissapointment screener
+        Find short term put options for companies that are reporting earnings
+        between the current date and the put expiration date. The idea is that
+        if the company misses earnings, or lowers guidance, they get crushed
+        (maybe unfairly) on the following day. This is the time to exercise the
+        put and cash out. These maybe should be under $0.50 each and would pay
+        out a bunch with a 3% loss on the underlying issue. The low cost allows
+        for extending leverage with limited exposure, and the short time frame
+        limits the chance that some sort of excellent news drives the price up.
+        The purchaser of these puts, however, should be prepared for these
+        options to expire worthless.
+
+        The most recent (Sept 2017) earnings announcement for Oracle was my
+        inspiration for this. They beat street estimates, but then lowered 
+        guidance, falling from near $53/share to $48/share (almost 10%). 
+        Assuming a $2 loss (4%) could be obtained for $0.20 each, then buying
+        5 of these puts would have returned something like $1500 on a $100
+        investment. That is a $3.00 additional loss times 5 puts, for $1500.
+
+        I don't love the idea of betting against companies, but it could be a
+        low risk way to build some capital during earnings season.

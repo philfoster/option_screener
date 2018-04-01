@@ -1,0 +1,5 @@
+CSCO
+AMAT
+T
+F
+M
