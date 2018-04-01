@@ -92,7 +92,7 @@
     safety with div                 - safety amount including dividend
     gain basis points/day with div  - hundredths of a perceent gained per day including dividend
 
-# Sample CSV This is real data extracted on 2018-03-31.
+# Sample CSV 
     Symbol, price, p/e ratio, exDivDate, hasDiv, div, yield, cost, expireDate, strike, bid, ask, gain$, gain%, safety, days, gain basis points/day, gain% with div, safety with div, gain basis points/day with div
     CSCO,42.85,99999.99,2018-04-04,yes,0.33,3.08,3955.45,2018-05-18,40.00,3.35,3.45,44.55,1.04%,7.69%,47,2.21,1.81%,8.46,3.85
     AMAT,55.50,20.94,2018-05-23,no,0.20,1.44,4765.45,2018-04-20,48.00,7.90,8.00,34.55,0.62%,14.14%,19,3.28,0.62%,14.14,3.28
