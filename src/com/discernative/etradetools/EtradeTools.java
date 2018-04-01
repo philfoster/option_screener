@@ -233,15 +233,6 @@ class EtradeTools {
         MarketClient marketClient = new MarketClient( accessRequest );
         ArrayList<OptionChainQuote> chain = new ArrayList<OptionChainQuote>();
 
-        // Get the option chain for a specific date and symbol
-        // Foreach strike price
-        //      get the call quote
-        //          underlier:year:month:day:optiontype:strikePrice
-        //      get the put qoute
-        //      add to the list
-        // return the list
-
-
         String month = new Integer( date.get ( Calendar.MONTH ) + 1 ).toString();
         String year = new Integer( date.get ( Calendar.YEAR ) ).toString();
 

@@ -39,9 +39,7 @@ class ITMScreener {
         String propertiesFile = args[0];
 
         Properties argProperties = EtradeTools.getProperties ( propertiesFile );
-
-        String outputFile = argProperties.getProperty( "output_file" );
-        
+                
         String authTokenFile = argProperties.getProperty ( "auth_token" );
         if ( authTokenFile == null ) {
             authTokenFile = DEFAULT_AUTH_TOKEN;
@@ -66,6 +64,14 @@ class ITMScreener {
         
         System.out.println( String.format( "(elapsed time %.2f seconds)", (float) ( endTime.getTimeInMillis() - startTime.getTimeInMillis() ) / 1000 ) );
 
+        writeFile ( csv );
+    }
+   
+    public static void writeFile ( ArrayList<String> csv ) {
+        SimpleDateFormat df = new SimpleDateFormat ( "yyyy-MM-dd-HH-mm" );
+        String dateString = df.format( new Date() );
+        
+        String outputFile = String.format( "itm_calls.%s.csv", dateString );
         if ( outputFile != null ) {
             BufferedWriter w = null;
             try {
