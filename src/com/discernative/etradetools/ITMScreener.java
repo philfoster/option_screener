@@ -204,7 +204,7 @@ class ITMScreener {
         }
         
         // Header
-        String header = "Symbol, price, p/e ratio, exDivDate, hasDiv, div, yield, cost, expireDate, strike, bid, ask, days, gain$, gain%, safety, gain basis points/day, gain% with div, safety with div, gain basis points/day with div";
+        String header = "Symbol, price, p/e ratio, exDivDate, hasDiv, div, yield, cost, expireDate, strike, bid, ask, days, gain$, gain%, safety, max profit safety, gain basis points/day, gain% with div, safety with div, max profit safety with div, gain basis points/day with div";
         csv.add ( header );
         
         for ( OptionChainQuote oq : keepers ) {
@@ -245,6 +245,8 @@ class ITMScreener {
             Double gainPrctWithDiv = gainPrct;
             Double safetyNetWithDiv = safetyNet;
             Double gainPointsPerDayWithDiv = gainPointsPerDay;
+            Double maxProfitSafetyNet = ( 1 - ( oq.getStrikePrice() / price ) ) * 100;
+            Double maxProfitSafetyNetWithDiv = maxProfitSafetyNet;
             
             
             if ( sq.getExDividendDate() != null ) {
@@ -261,6 +263,7 @@ class ITMScreener {
                 costBasisWithDiv = ( price - oq.getBid() ) + ( commission / 100 ) - sq.getDividend();
                 safetyNetWithDiv = ( 1 - ( costBasisWithDiv / price ) ) * 100;
                 gainPointsPerDayWithDiv = ( gainPrctWithDiv / daysToExpire ) * 100;
+                maxProfitSafetyNetWithDiv = ( 1 - ( ( oq.getStrikePrice() - sq.getDividend() ) / price ) ) * 100;
             }
                 
             if ( gainPrct < minGainPrct ) {
@@ -268,10 +271,10 @@ class ITMScreener {
                 continue;
             }
             
-            // Symbol, price, p/e ratio, exDivDate, hasDiv, div, yield, cost, expireDate, strike, bid, ask, days, gain$, gain%, safety, gainPoints/day, gain% with div, safety with div, gainPoint/Day with div
+            // Symbol, price, p/e ratio, exDivDate, hasDiv, div, yield, cost, expireDate, strike, bid, ask, days, gain$, gain%, safety, max profit safety, gainPoints/day, gain% with div, safety with div, max profit safety with div, gainPoint/Day with div
             
             csv.add (
-                String.format ( "%s,%.2f,%.2f,%s,%s,%.2f,%.2f,%.2f,%s,%.2f,%.2f,%.2f,%d,%.2f,%.2f%%,%.2f%%,%.2f,%.2f%%,%.2f%%,%.2f",
+                String.format ( "%s,%.2f,%.2f,%s,%s,%.2f,%.2f,%.2f,%s,%.2f,%.2f,%.2f,%d,%.2f,%.2f%%,%.2f%%,%.2f%%,%.2f,%.2f%%,%.2f%%,%.2f%%,%.2f",
                     oq.getSymbol(), 
                     sq.getPrice(),
                     sq.getPE(),
@@ -288,9 +291,11 @@ class ITMScreener {
                     dollarGain,
                     gainPrct, 
                     safetyNet, 
+                    maxProfitSafetyNet,
                     gainPointsPerDay,
                     gainPrctWithDiv,
                     safetyNetWithDiv,
+                    maxProfitSafetyNetWithDiv,
                     gainPointsPerDayWithDiv
                     ) 
                 );                             

@@ -86,11 +86,13 @@
     gain$                           - Gain (in dollars) if the option is exercised 
     gain%                           - Gain (percentage) if the option is exercised (gain / cost)
     safety                          - amount the underlier most drop in order to lose money
+    max profit safety               - amount the underlier can drop and you still make max profit
     days                            - number of days before option expiration
     gain basis points/day           - hundredths of a percent gained per day if executed
     gain% with div                  - Gain (in dollars) including dividend (if applicable)
     safety with div                 - safety amount including dividend
     gain basis points/day with div  - hundredths of a perceent gained per day including dividend
+    max profit safety with div      - amount the underlier can drop and you still make max profit including dividend
 
 # Sample CSV 
     Symbol, price, p/e ratio, exDivDate, hasDiv, div, yield, cost, expireDate, strike, bid, ask, gain$, gain%, safety, days, gain basis points/day, gain% with div, safety with div, gain basis points/day with div
