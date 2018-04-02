@@ -40,7 +40,7 @@ class EtradeTools {
     public static int LIVE = 1;
     public static int SANDBOX = 0;
 
-    public static int MAX_BATCH_SIZE = 20;
+    public static int MAX_BATCH_SIZE = 25;
 
     public static AuthToken getAuthToken ( String key, String secret, int env ) throws IOException, ETWSException {
 
