@@ -82,12 +82,11 @@
     expireDate                      - option expiration date
     strike                          - strike price of the call option
     bid                             - bid price of the call option
-    ask                             - ask price of the call option
     days                            - number of days before option expiration
     gain$                           - Gain (in dollars) if the option is exercised 
     gain%                           - Gain (percentage) if the option is exercised (gain / cost)
     gain% with div                  - Gain (in dollars) including dividend (if applicable)
-    safety with div                 - safety amount including dividend
-    gain basis points/day with div  - hundredths of a perceent gained per day including dividend
-    max profit safety with div      - amount the underlier can drop and you still make max profit including dividend
+    safety                          - safety amount including dividend
+    gain basis points/day           - hundredths of a perceent gained per day including dividend
+    max profit safety               - amount the underlier can drop and you still make max profit including dividend
 

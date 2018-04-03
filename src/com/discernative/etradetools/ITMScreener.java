@@ -204,7 +204,7 @@ class ITMScreener {
         }
         
         // Header
-        String header = "Symbol, price, p/e ratio, exDivDate, hasDiv, div, yield, cost, expireDate, strike, bid, ask, days, gain$, gain%, gain% with div, safety with div, max profit safety with div, gain basis points/day with div";
+        String header = "Symbol, price, p/e ratio, exDivDate, hasDiv, div, yield, cost, expireDate, strike, bid, days, gain$, gain%, gain% with div, safety, max profit safety, gain basis points/day";
         csv.add ( header );
         
         for ( OptionChainQuote oq : keepers ) {
@@ -241,7 +241,6 @@ class ITMScreener {
             // Add in the dividend stuff
             Double gainWithDiv = gain;
             Double costBasisWithDiv = costBasis;
-            Double dollarGainWithDiv = dollarGain;
             Double gainPrctWithDiv = gainPrct;
             Double safetyNetWithDiv = safetyNet;
             Double gainPointsPerDayWithDiv = gainPointsPerDay;
@@ -258,7 +257,6 @@ class ITMScreener {
             
             if ( includeDiv ) {
                 gainWithDiv += sq.getDividend();
-                dollarGainWithDiv = gainWithDiv * 100;
                 gainPrctWithDiv = ( 100 * gainWithDiv ) / price;
                 costBasisWithDiv = ( price - oq.getBid() ) + ( commission / 100 ) - sq.getDividend();
                 safetyNetWithDiv = ( 1 - ( costBasisWithDiv / price ) ) * 100;
@@ -271,26 +269,40 @@ class ITMScreener {
                 continue;
             }
             
-            // Symbol, price, p/e ratio, exDivDate, hasDiv, div, yield, cost, expireDate, strike, bid, ask, days, gain$, gain%, gain% with div, safety%, max profit safety%, gainPoint/Day
+            // Symbol, price, p/e ratio, 
+            // exDivDate, hasDiv, div, 
+            // yield, cost, expireDate, 
+            // strike, bid, days
+            // gain$, gain%, gain %with div
+            // safety%, max profit safety%, gainPoint/Day
             
             csv.add (
-                String.format ( "%s,%.2f,%.2f,%s,%s,%.2f,%.2f,%.2f,%s,%.2f,%.2f,%.2f,%d,%.2f,%.2f%%,%.2f%%,%.2f%%,%.2f%%,%.2f",
+                String.format ( "%s,%.2f,%.2f" + 
+                        ",%s,%s,%.2f" + 
+                        ",%.2f,%.2f,%s" + 
+                        ",%.2f,%.2f,%d" + 
+                        ",%.2f,%.2f%%,%.2f%%" + 
+                        ",%.2f%%,%.2f%%,%.2f",
                     oq.getSymbol(), 
                     sq.getPrice(),
                     sq.getPE(),
+                    
                     sq.getExDividendDateString(),
                     hasDiv,
                     sq.getDividend(),
+                    
                     sq.getYield(),
                     outOfPocket,
                     oq.getDateString(), 
+                    
                     oq.getStrikePrice(), 
                     oq.getBid(), 
-                    oq.getAsk(), 
                     daysToExpire, 
+                    
                     dollarGain,
                     gainPrct, 
                     gainPrctWithDiv,
+                    
                     safetyNetWithDiv,
                     maxProfitSafetyNetWithDiv,
                     gainPointsPerDayWithDiv
