@@ -9,11 +9,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-import java.io.FileReader;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.HashMap;
 
 class ITMScreener {
@@ -31,13 +26,15 @@ class ITMScreener {
     
     private static final long DAY_IN_SECONDS = 60 * 60 * 24;
     private static final long DAY_IN_MILLIS = DAY_IN_SECONDS * 1000;
+    private static final String CSV_FORMAT_STRING = "itm_calls.%s.csv";
     
     private static SimpleDateFormat dateFormatter = new SimpleDateFormat ( "yyyy-MM-dd" );
+
 
     public static void main ( String[] args ) {
         System.out.println ( "In the Money Covered Call Option Screener" );
         String propertiesFile = args[0];
-
+    
         Properties argProperties = EtradeTools.getProperties ( propertiesFile );
                 
         String authTokenFile = argProperties.getProperty ( "auth_token" );
@@ -49,11 +46,11 @@ class ITMScreener {
         if ( symbolFile == null ) {
             System.out.println ( "Error: no symbol_file defined in " + argProperties );
         }
-
+    
         AuthToken authToken = EtradeTools.getAuthToken ( authTokenFile );
-
-        ArrayList<String> symbols = readSymbols ( symbolFile );
-
+    
+        ArrayList<String> symbols = EtradeTools.readSymbols ( symbolFile );
+    
         Calendar startTime = Calendar.getInstance();
         ArrayList<String> csv = screener ( authToken, symbols, argProperties );
         Calendar endTime = Calendar.getInstance();
@@ -63,33 +60,8 @@ class ITMScreener {
         }
         
         System.out.println( String.format( "(elapsed time %.2f seconds)", (float) ( endTime.getTimeInMillis() - startTime.getTimeInMillis() ) / 1000 ) );
-
-        writeFile ( csv );
-    }
-   
-    public static void writeFile ( ArrayList<String> csv ) {
-        SimpleDateFormat df = new SimpleDateFormat ( "yyyy-MM-dd-HH-mm" );
-        String dateString = df.format( new Date() );
-        
-        String outputFile = String.format( "itm_calls.%s.csv", dateString );
-        if ( outputFile != null ) {
-            BufferedWriter w = null;
-            try {
-                w = new BufferedWriter ( new FileWriter ( outputFile ) );    
-                
-                for ( String line : csv ) {
-                    w.write( line  );
-                    w.newLine();
-                }
-                w.close();
-            } catch ( IOException e ) {
-                e.printStackTrace();
-                System.exit( 1 );
-            }
-           
-            
-           
-        }
+    
+        EtradeTools.writeFile ( CSV_FORMAT_STRING, csv );
     }
 
     public static ArrayList<String> screener ( AuthToken authToken, ArrayList<String> symbols, Properties props ) {
@@ -312,25 +284,6 @@ class ITMScreener {
         return csv;
     }
 
-    public static ArrayList<String> readSymbols ( String filename ) { 
-        ArrayList<String> symbolList = new ArrayList<String>();
-
-        try {
-            BufferedReader fileReader = new BufferedReader ( new FileReader ( filename ) );
-
-            String line;
-            while ( ( line = fileReader.readLine() ) != null ) {
-                symbolList.add ( line );
-            }
-            fileReader.close();
-        } catch ( Exception e ) {
-            e.printStackTrace();
-            System.exit ( 1 );
-        }
-
-        return symbolList;
-    }
-    
     public static String formatDate ( Calendar date ) {
         return dateFormatter.format( date.getTime() );
     }

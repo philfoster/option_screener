@@ -28,10 +28,16 @@ import java.util.Scanner;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Calendar;
+import java.util.Date;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.FileInputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.ObjectInputStream;
 
 import java.math.BigDecimal;
+import java.text.SimpleDateFormat;
 import java.util.regex.*;
 import java.util.Properties;
 
@@ -161,11 +167,11 @@ class EtradeTools {
                 } catch (IOException ex) {
                     System.out.println ( "caught exception: " + ex );
                     ex.printStackTrace();
-                    System.exit(1);
+                    return allResponses;
                 } catch (ETWSException ex) {
                     System.out.println ( "caught exception: " + ex );
                     ex.printStackTrace();
-                    System.exit(1);
+                    return allResponses;
                 }
 
                 // Now clear out the batch for the next run
@@ -380,6 +386,10 @@ class EtradeTools {
         for ( QuoteData quoteData : getQuote ( authToken, symbols ) ) {
 
             String symbol = quoteData.getProduct().getSymbol();
+            
+            if ( quoteData.getAll() == null ) {
+                continue;
+            }
             Double lastTrade = quoteData.getAll().getLastTrade();
             StockQuote q = new StockQuote ( symbol, lastTrade );
 
@@ -410,5 +420,49 @@ class EtradeTools {
         }
 
         return quoteList;
+    }
+
+    public static ArrayList<String> readSymbols ( String filename ) { 
+        ArrayList<String> symbolList = new ArrayList<String>();
+    
+        try {
+            BufferedReader fileReader = new BufferedReader ( new FileReader ( filename ) );
+    
+            String line;
+            while ( ( line = fileReader.readLine() ) != null ) {
+                symbolList.add ( line );
+            }
+            fileReader.close();
+        } catch ( Exception e ) {
+            e.printStackTrace();
+            System.exit ( 1 );
+        }
+    
+        return symbolList;
+    }
+
+    public static void writeFile ( String formatString, ArrayList<String> csv ) {
+        SimpleDateFormat df = new SimpleDateFormat ( "yyyy-MM-dd-HH-mm" );
+        String dateString = df.format( new Date() );
+        
+        String outputFile = String.format( formatString, dateString );
+        if ( outputFile != null ) {
+            BufferedWriter w = null;
+            try {
+                w = new BufferedWriter ( new FileWriter ( outputFile ) );    
+                
+                for ( String line : csv ) {
+                    w.write( line  );
+                    w.newLine();
+                }
+                w.close();
+            } catch ( IOException e ) {
+                e.printStackTrace();
+                System.exit( 1 );
+            }
+           
+            
+           
+        }
     }
 }
