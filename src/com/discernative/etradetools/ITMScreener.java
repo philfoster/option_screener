@@ -24,11 +24,9 @@ class ITMScreener {
     private static final String DEFAULT_MIN_SAFETY_NET_PROPERTY = "5.0";
     private static final String DEFAULT_MAX_PE_PROPERTY = "100.0";
     
-    private static final long DAY_IN_SECONDS = 60 * 60 * 24;
-    private static final long DAY_IN_MILLIS = DAY_IN_SECONDS * 1000;
     private static final String CSV_FORMAT_STRING = "itm_calls.%s.csv";
     
-    private static SimpleDateFormat dateFormatter = new SimpleDateFormat ( "yyyy-MM-dd" );
+    static SimpleDateFormat dateFormatter = new SimpleDateFormat ( "yyyy-MM-dd" );
 
 
     public static void main ( String[] args ) {
@@ -120,11 +118,11 @@ class ITMScreener {
 
             for ( Calendar date : expirationDates ) {
                 long deltaMillis = date.getTimeInMillis() - now.getTime();
-                int deltaDays = (int) ( deltaMillis / DAY_IN_MILLIS );
+                int deltaDays = (int) ( deltaMillis / EtradeTools.DAY_IN_MILLIS );
                 
                 
                 if ( deltaDays < minDays ) {
-                    System.out.println("skipping date for " + symbol +", " + formatDate ( date ) + " because it's too soon (min=" + minDays + " days, delta=" + deltaDays + ")" );
+                    System.out.println("skipping date for " + symbol +", " + EtradeTools.formatDate ( date ) + " because it's too soon (min=" + minDays + " days, delta=" + deltaDays + ")" );
                     
                     if ( authToken.getEnv() == EtradeTools.LIVE ) {
                         continue;
@@ -132,7 +130,7 @@ class ITMScreener {
                 }
                 
                 if ( deltaDays > maxDays ) {
-                    System.out.println("skipping date for " + symbol + ", " + formatDate ( date ) + ", because it's too far away (max=" + maxDays +" days, delta= " + deltaDays + ")" );
+                    System.out.println("skipping date for " + symbol + ", " + EtradeTools.formatDate ( date ) + ", because it's too far away (max=" + maxDays +" days, delta= " + deltaDays + ")" );
                     continue;
                 }
                 
@@ -204,7 +202,7 @@ class ITMScreener {
             Double costBasis = ( price - oq.getBid() ) + ( commission / 100 );
             Double outOfPocket = costBasis * 100;
             Double safetyNet = ( 1 - ( costBasis / price ) ) * 100;
-            long daysToExpire = (int) ( ( oq.getDate().getTimeInMillis() - now.getTime() ) / DAY_IN_MILLIS ); 
+            long daysToExpire = (int) ( ( oq.getDate().getTimeInMillis() - now.getTime() ) / EtradeTools.DAY_IN_MILLIS ); 
             
             Double gainPointsPerDay = ( gainPrct / daysToExpire ) * 100;  
             String hasDiv = "no";
@@ -282,9 +280,5 @@ class ITMScreener {
                 );                             
         }
         return csv;
-    }
-
-    public static String formatDate ( Calendar date ) {
-        return dateFormatter.format( date.getTime() );
     }
 }

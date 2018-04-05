@@ -465,4 +465,11 @@ class EtradeTools {
            
         }
     }
+
+    static final long DAY_IN_SECONDS = 60 * 60 * 24;
+    static final long DAY_IN_MILLIS = DAY_IN_SECONDS * 1000;
+
+    public static String formatDate ( Calendar date ) {
+        return ITMScreener.dateFormatter.format( date.getTime() );
+    }
 }
