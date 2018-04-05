@@ -134,7 +134,7 @@ class ITMScreener {
                     continue;
                 }
                 
-                ArrayList<OptionChainQuote> optionChainQuotes = EtradeTools.getCallOptionChainQuote ( authToken, symbol, date );
+                ArrayList<OptionChainQuote> optionChainQuotes = EtradeTools.getCallOptionChainQuote ( authToken, symbol, date, quote.getPrice(), EtradeTools.ITM );
                 
                 for ( OptionChainQuote optionQuote : optionChainQuotes ) {
                     Double intrinsicValue = quote.getPrice() - optionQuote.getStrikePrice();

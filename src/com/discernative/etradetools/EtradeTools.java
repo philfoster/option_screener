@@ -43,8 +43,11 @@ import java.util.Properties;
 
 class EtradeTools {
 
-    public static int LIVE = 1;
-    public static int SANDBOX = 0;
+    public static final int LIVE = 1;
+    public static final int SANDBOX = 0;
+    public static final int ITM = 1;
+    public static final int OTM = 2;
+    public static final int ALL = ITM | OTM;
 
     public static int MAX_BATCH_SIZE = 25;
 
@@ -220,21 +223,36 @@ class EtradeTools {
     }
     
     public static ArrayList<OptionChainQuote> getOptionChainQuote ( AuthToken authToken, String symbol, Calendar date ) {
-        return getOptionChainQuote ( authToken, symbol, date, "CALLPUT" );
+        Double price = 0.0;
+        int scope = EtradeTools.ALL;
+        return getOptionChainQuote ( authToken, symbol, date, "CALLPUT", price, scope );
     }
     
     public static ArrayList<OptionChainQuote> getCallOptionChainQuote ( AuthToken authToken, String symbol, Calendar date ) {
-        return getOptionChainQuote ( authToken, symbol, date, "CALL" );
+        Double price = 0.0;
+        int scope = EtradeTools.ALL;
+        return getOptionChainQuote ( authToken, symbol, date, "CALL", price, scope );
     }
     
     public static ArrayList<OptionChainQuote> getPutOptionChainQuote ( AuthToken authToken, String symbol, Calendar date ) {
-        return getOptionChainQuote ( authToken, symbol, date, "PUT" );
+        Double price = 0.0;
+        int scope = EtradeTools.ALL;
+        return getOptionChainQuote ( authToken, symbol, date, "PUT", price, scope );
     }
     
-    public static ArrayList<OptionChainQuote> getOptionChainQuote ( AuthToken authToken, String symbol, Calendar date, String optionType ) {
-        
+    public static ArrayList<OptionChainQuote> getOptionChainQuote ( AuthToken authToken, String symbol, Calendar date, Double price, int scope ) {
+        return getOptionChainQuote ( authToken, symbol, date, "CALLPUT", price, scope );
+    }
     
-
+    public static ArrayList<OptionChainQuote> getCallOptionChainQuote ( AuthToken authToken, String symbol, Calendar date, Double price, int scope ) {
+        return getOptionChainQuote ( authToken, symbol, date, "CALL", price, scope );
+    }
+    
+    public static ArrayList<OptionChainQuote> getPutOptionChainQuote ( AuthToken authToken, String symbol, Calendar date, Double price, int scope ) {
+        return getOptionChainQuote ( authToken, symbol, date, "PUT", price, scope );
+    }
+    
+    public static ArrayList<OptionChainQuote> getOptionChainQuote ( AuthToken authToken, String symbol, Calendar date, String optionType, Double price, int scope ) {
         ClientRequest accessRequest = getAccessRequest ( authToken );
         MarketClient marketClient = new MarketClient( accessRequest );
         ArrayList<OptionChainQuote> chain = new ArrayList<OptionChainQuote>();
@@ -282,11 +300,25 @@ class EtradeTools {
                     Integer theDay = expDate.getDay(); 
                     Integer theMonth = new Integer ( expDate.getMonth() ); 
                     Integer theYear = expDate.getYear(); 
-                    
+
                     // Fetch the call option quote
                     //          underlier:year:month:day:optiontype:strikePrice
                     String chainSymbol = new String ( String.format ( "%s:%d:%d:%d:%s:%f", symbol, theYear, theMonth, theDay, "CALL", strike ) );
-
+    
+                    // See if we want to fetch the call quote here
+                    if ( strike.doubleValue() < price ) {
+                        // In the money call
+                        if ( ( scope & ITM ) == 0 ) {
+                            System.out.println( String.format( "skipping %s, it's in the money (price=%.2f)", chainSymbol, price ) );
+                            continue;
+                        }
+                    } else {
+                        // Out of the money call
+                        if ( ( scope & OTM ) == 0 ) {
+                            System.out.println( String.format( "skipping %s, it's out of the money (price=%.2f)", chainSymbol, price ) );
+                            continue;
+                        }
+                    }
                     symbolBatch.add ( chainSymbol );
                 }
             }
@@ -304,6 +336,21 @@ class EtradeTools {
                     // Fetch the put option quote
                     //          underlier:year:month:day:optiontype:strikePrice
                     String chainSymbol = new String ( String.format ( "%s:%d:%d:%d:%s:%f", symbol, theYear, theMonth, theDay, "PUT", strike ) );
+
+                    // See if we want to fetch the put quote here
+                    if ( strike.doubleValue() > price ) {
+                        // In the money put
+                        if ( ( scope & ITM ) == 0 ) {
+                            System.out.println( String.format( "skipping %s, it's in the money (price=%.2f)", chainSymbol, price ) );
+                            continue;
+                        }
+                    } else {
+                        // Out of the money put
+                        if ( ( scope & OTM ) == 0 ) {
+                            System.out.println( String.format( "skipping %s, it's out of the money (price=%.2f)", chainSymbol, price ) );
+                            continue;
+                        }
+                    }
 
                     symbolBatch.add ( chainSymbol );
                 }
@@ -323,7 +370,7 @@ class EtradeTools {
             String symbolDesc = quoteData.getAll().getSymbolDesc();
             String underlier = quoteData.getProduct().getSymbol();
             Double strike = new Double ( 0.0 );
-
+            
             String type;
 
             // GOOG Apr 16 '11 $350 Put
