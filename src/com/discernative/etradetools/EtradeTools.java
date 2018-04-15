@@ -136,10 +136,10 @@ class EtradeTools {
         return verificationCode;
     }
 
-    public static List<QuoteData> getQuote ( AuthToken authToken, String symbol ) { 
+    public static QuoteData getQuote ( AuthToken authToken, String symbol ) { 
         ArrayList<String> symbols = new ArrayList<String>();
         symbols.add(symbol);
-        return getQuote ( authToken, symbols );
+        return getQuote ( authToken, symbols ).get(0);
     }
 
     public static List<QuoteData> getQuote ( AuthToken authToken, ArrayList<String> symbols ) { 

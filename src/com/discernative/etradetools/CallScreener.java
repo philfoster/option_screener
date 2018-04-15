@@ -190,7 +190,7 @@ public class CallScreener {
             }
         }
         
-        output.add ( "symbol,price,p/e ratio,expire date,strike,bid,ask,safety margin,profit$ (on " + projectedMove + "% gain),profit% (on " + projectedMove + "%gain)" );
+        output.add ( "symbol,price,p/e ratio,expire date,strike,bid,ask,safety margin,profit$ (on " + projectedMove + "% gain),profit% (on " + projectedMove + "% gain)" );
         for ( OptionChainQuote optionQuote : keepers ) {
             String symbol = optionQuote.getSymbol();
             StockQuote stockQuote = tickerMap.get ( symbol );

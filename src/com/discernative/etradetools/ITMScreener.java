@@ -25,6 +25,7 @@ class ITMScreener {
     private static final String DEFAULT_MAX_PE_PROPERTY = "100.0";
     
     private static final String CSV_FORMAT_STRING = "itm_calls.%s.csv";
+    private static final String DEFAULT_ASSIGNMENT_FEE_PROPERTY = "4.95;
     
     static SimpleDateFormat dateFormatter = new SimpleDateFormat ( "yyyy-MM-dd" );
 
@@ -73,6 +74,7 @@ class ITMScreener {
     	Double minBid = new Double ( props.getProperty ( "min_bid", DEFAULT_MIN_BID_PROPERTY ) );
     	Double minSafetyNet = new Double ( props.getProperty ( "min_safety_net", DEFAULT_MIN_SAFETY_NET_PROPERTY ) );
     	Double maxPE = new Double ( props.getProperty ( "max_pe", DEFAULT_MAX_PE_PROPERTY ) );
+    	Double assignmentFee = new Double ( props.getProperty ( "assignment_fee", DEFAULT_ASSIGNMENT_FEE_PROPERTY ) );
     	
     	ArrayList<String> csv = new ArrayList<String>();
     	
@@ -139,7 +141,7 @@ class ITMScreener {
                 for ( OptionChainQuote optionQuote : optionChainQuotes ) {
                     Double intrinsicValue = quote.getPrice() - optionQuote.getStrikePrice();
                     Double timeValue = optionQuote.getBid() - intrinsicValue;
-                    Double gain = timeValue - ( commission / 100 );
+                    Double gain = timeValue - ( ( assignmentFee + commission ) / 100 );
                     Double gainPrct = ( 100 * gain ) / quote.getPrice();
                     Double costBasis = ( quote.getPrice() - optionQuote.getBid() ) + ( commission / 100 );
                     Double safetyNet = ( 1 - ( costBasis / quote.getPrice() ) ) * 100;
@@ -174,7 +176,7 @@ class ITMScreener {
         }
         
         // Header
-        String header = "Symbol, price, p/e ratio, exDivDate, hasDiv, div, yield, cost, expireDate, strike, bid, days, gain$, gain%, gain% with div, safety, max profit safety, gain basis points/day";
+        String header = "Symbol, price, p/e ratio, exDivDate, hasDiv, div, yield, cost, expireDate, strike, bid, days, gain$, gain%, gain% with div, safety, max profit safety, gain basis points/day,annualized gain%";
         csv.add ( header );
         
         for ( OptionChainQuote oq : keepers ) {
@@ -195,7 +197,7 @@ class ITMScreener {
             
             Double intrinsicValue = price - oq.getStrikePrice();
             Double timeValue = oq.getBid() - intrinsicValue;
-            Double gain = timeValue - ( commission / 100 );
+            Double gain = timeValue - ( ( assignmentFee + commission ) / 100 );
             Double dollarGain = gain * 100;
             
             Double gainPrct = ( 100 * gain ) / price;
@@ -216,6 +218,7 @@ class ITMScreener {
             Double gainPointsPerDayWithDiv = gainPointsPerDay;
             Double maxProfitSafetyNet = ( 1 - ( oq.getStrikePrice() / price ) ) * 100;
             Double maxProfitSafetyNetWithDiv = maxProfitSafetyNet;
+
             
             
             if ( sq.getExDividendDate() != null ) {
@@ -239,6 +242,8 @@ class ITMScreener {
                 continue;
             }
             
+            Double annualizedGain = gainPointsPerDayWithDiv * 3.65;
+            
             // Symbol, price, p/e ratio, 
             // exDivDate, hasDiv, div, 
             // yield, cost, expireDate, 
@@ -252,7 +257,8 @@ class ITMScreener {
                         ",%.2f,%.2f,%s" + 
                         ",%.2f,%.2f,%d" + 
                         ",%.2f,%.2f%%,%.2f%%" + 
-                        ",%.2f%%,%.2f%%,%.2f",
+                        ",%.2f%%,%.2f%%,%.2f" +
+                        ",%.2f%%",
                     oq.getSymbol(), 
                     sq.getPrice(),
                     sq.getPE(),
@@ -275,7 +281,8 @@ class ITMScreener {
                     
                     safetyNetWithDiv,
                     maxProfitSafetyNetWithDiv,
-                    gainPointsPerDayWithDiv
+                    gainPointsPerDayWithDiv,
+                    annualizedGain
                     ) 
                 );                             
         }
