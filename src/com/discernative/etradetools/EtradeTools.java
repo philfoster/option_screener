@@ -202,11 +202,9 @@ class EtradeTools {
         } catch (IOException ex) {
             System.out.println ( "caught exception: " + ex );
             ex.printStackTrace();
-            System.exit(1);
         } catch (ETWSException ex) {
             System.out.println ( "caught exception: " + ex );
             ex.printStackTrace();
-            System.exit(1);
         }
 
         ArrayList<Calendar> dateList = new ArrayList<Calendar>();

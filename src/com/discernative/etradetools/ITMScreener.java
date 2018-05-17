@@ -25,7 +25,7 @@ class ITMScreener {
     private static final String DEFAULT_MAX_PE_PROPERTY = "100.0";
     
     private static final String CSV_FORMAT_STRING = "itm_calls.%s.csv";
-    private static final String DEFAULT_ASSIGNMENT_FEE_PROPERTY = "4.95;
+    private static final String DEFAULT_ASSIGNMENT_FEE_PROPERTY = "4.95";
     
     static SimpleDateFormat dateFormatter = new SimpleDateFormat ( "yyyy-MM-dd" );
 
