@@ -93,6 +93,11 @@ class ITMScreener {
                 continue;
             }
             
+            if ( quote.getExDividendDateString().equals("n/a" ) ) {
+                System.out.println( "skipping " + symbol + ", no ex-dividend date" );
+                continue;
+            }
+            
             if ( quote.getPE() > maxPE && maxPE != 0 ) {
                 System.out.println( "skipping " + symbol + ", P/E Ratio is too high" );
                 continue;
