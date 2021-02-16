@@ -1,0 +1,5 @@
+{
+	"min_open_interest": 50,
+	"min_annual_roo": 0.24,
+	"max_annual_roo": 3.0
+}

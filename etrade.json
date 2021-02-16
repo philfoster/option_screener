@@ -1,0 +1,4 @@
+{
+	"authtoken": "~/.etrade-authtoken.json",
+	"credentials": "~/.etrade.properties"
+}
