@@ -92,7 +92,7 @@ def main(config_file,market_tone_config,symbol,expiration,debug,verbose):
                 print(f"{call.get_display_symbol()} roo_annual {roo_annual:.2f} is too low min={min_annual_roo}")
             continue
 
-        if delta < min_delta:
+        if delta > 0 and delta < min_delta:
             # delta is too low
             if debug:
                 print(f"{call.get_display_symbol()} delta {delta} is too low min={min_delta}")
