@@ -2,9 +2,10 @@ etrade.properties
 auth_token.dat
 *.swp
 a.out
-lib
 build
+__pycache__
 .classpath
 .DS_Store
 .project
 *.csv
+*.pyc
