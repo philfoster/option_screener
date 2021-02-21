@@ -15,7 +15,7 @@ DEFAULT_MIN_DOWNSIDE=0.0
 DEFAULT_MIN_DELTA=0.0
 DEFAULT_MAX_DELTA=1.0
 
-def main(config_file,market_tone_config,symbol,expiration,debug):
+def main(config_file,market_tone_config,symbol,expiration,debug,verbose):
     # Get the market tone config
     tone_config = read_json_file(market_tone_config)
 
@@ -115,7 +115,14 @@ def main(config_file,market_tone_config,symbol,expiration,debug):
             continue
 
         count += 1
-        print(f"{call.get_display_symbol()}: price={stock_price} days={days} roo={100*roo:.2f}%({100*roo_annual:0.2f}%) downside={100*downside_protection:.2f}% upside={100*upside:.2f}%({100*upside_annual:.2f}%) total={100*total_gain:.2f}%({100*total_annual:.2f}%)")
+
+        if verbose:
+            print(f"{call.get_display_symbol()}: price={stock_price} days={days} premium=${call_premium:.2f}")
+            print(f"\tROO   : {100*roo:.2f}% ({100*roo_annual:0.2f}%)\t Profit: ${100*time_value:.2f}")
+            print(f"\tUpside: {100*upside:.2f}% ({100*upside_annual:.2f}%)")
+            print(f"\tTotal : {100*total_gain:.2f}% ({100*total_annual:.2f}%)")
+        else:
+            print(f"{call.get_display_symbol()}: price={stock_price} days={days} roo={100*roo:.2f}%({100*roo_annual:0.2f}%) downside={100*downside_protection:.2f}% upside={100*upside:.2f}%({100*upside_annual:.2f}%) total={100*total_gain:.2f}%({100*total_annual:.2f}%)")
 
     if count == 0:
         print("No matching options found")
@@ -127,6 +134,7 @@ if __name__ == "__main__":
     parser.add_argument('-s','--symbol', dest='symbol', required=True,help="Symbol to search" )
     parser.add_argument('-e','--expiration', dest='expiration', required=False,default=None,help="Expiration Date <YYYY-MM-DD>" )
     parser.add_argument('-d','--debug', dest='debug', required=False,default=False,action='store_true',help="Expiration Date <YYYY-MM-DD>" )
+    parser.add_argument('-v','--verbose', dest='verbose', required=False,default=False,action='store_true',help="Increase verbosity")
     parser.add_argument('-m','--market-tone', dest='market_tone', required=True,help="Market tone configuration" )
 
     expiration = None
@@ -136,5 +144,5 @@ if __name__ == "__main__":
         (y,m,d) = args.expiration.split("-")
         expiration = datetime.datetime(year=int(y),month=int(m), day=int(d))
 
-    main(args.config_file,args.market_tone,args.symbol,expiration,args.debug)
+    main(args.config_file,args.market_tone,args.symbol,expiration,args.debug,args.verbose)
 
