@@ -74,18 +74,16 @@ def renew_authtoken(config_file,force_renew):
     (creds_file, authtoken_file) = _get_etrade_config(config_file)
     authtoken_data = _get_authtoken_data(config_file)
 
-    # Setting up the object used for Access Management
-    authManager = pyetrade.authorization.ETradeAccessManager(
-                authtoken_data.get(PROPERTIES_CONSUMER_KEY),
-                authtoken_data.get(PROPERTIES_CONSUMER_SECRET),
-                authtoken_data.get(PROPERTIES_OAUTH_TOKEN),
-                authtoken_data.get(PROPERTIES_OAUTH_TOKEN_SECRET)
-            )
-
     elapsed_time = int(time.time() - authtoken_data.get(PROPERTIES_LAST_AUTH_TIME,0))
     if force_renew or elapsed_time > MIN_AUTH_RENEW_THRESHOLD:
-        print("renewing authtoken")
-        # Triggering a renew
+        # Setting up the object used for Access Management
+        authManager = pyetrade.authorization.ETradeAccessManager(
+                    authtoken_data.get(PROPERTIES_CONSUMER_KEY),
+                    authtoken_data.get(PROPERTIES_CONSUMER_SECRET),
+                    authtoken_data.get(PROPERTIES_OAUTH_TOKEN),
+                    authtoken_data.get(PROPERTIES_OAUTH_TOKEN_SECRET)
+                )
+
         authManager.renew_access_token()
 
         # Update the timestamp
@@ -94,7 +92,6 @@ def renew_authtoken(config_file,force_renew):
         # Rewrite the token file
         _write_authtoken_file(authtoken_file,authtoken_data)
         return
-    print(f"not renewing elapsed={elapsed_time}")
     return
 
 ################################################################################
