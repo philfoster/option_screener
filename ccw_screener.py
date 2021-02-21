@@ -58,6 +58,8 @@ def main(config_file,market_tone_config,symbol,expiration,debug,verbose):
         upside = stock_upside / stock_price
         total_gain = roo + upside
 
+        total_profit = time_value + stock_upside 
+
         roo_annual = (365/days) * roo
         upside_annual = (365/days) * upside
         total_annual = roo_annual + upside_annual
@@ -118,9 +120,11 @@ def main(config_file,market_tone_config,symbol,expiration,debug,verbose):
 
         if verbose:
             print(f"{call.get_display_symbol()}: price={stock_price} days={days} premium=${call_premium:.2f}")
-            print(f"\tROO   : {100*roo:.2f}% ({100*roo_annual:0.2f}%)\t Profit: ${100*time_value:.2f}")
-            print(f"\tUpside: {100*upside:.2f}% ({100*upside_annual:.2f}%)")
-            print(f"\tTotal : {100*total_gain:.2f}% ({100*total_annual:.2f}%)")
+            print(f"\tProtection: {100*downside_protection:6.2f}%\t\tDelta : {delta:8.4f}")
+            print(f"\tROO       : {100*roo:6.2f}% ({100*roo_annual:6.2f}%)\tProfit: ${100*time_value:7.2f}")
+            print(f"\tUpside    : {100*upside:6.2f}% ({100*upside_annual:6.2f})%\tProfit: ${100*stock_upside:7.2f}")
+            print(f"\tTotal     : {100*total_gain:6.2f}% ({100*total_annual:6.2f}%)\tTotal : ${100*total_profit:7.2f}")
+            print()
         else:
             print(f"{call.get_display_symbol()}: price={stock_price} days={days} roo={100*roo:.2f}%({100*roo_annual:0.2f}%) downside={100*downside_protection:.2f}% upside={100*upside:.2f}%({100*upside_annual:.2f}%) total={100*total_gain:.2f}%({100*total_annual:.2f}%)")
 
