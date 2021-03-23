@@ -12,7 +12,7 @@ PROPERTIES_SANDBOX="SANDBOX"
 PROPERTIES_LAST_AUTH_TIME="last_auth_time"
 PROPERTIES_OAUTH_TOKEN="oauth_token"
 PROPERTIES_OAUTH_TOKEN_SECRET="oauth_token_secret"
-MAX_AUTH_TIME=90 * 60
+MAX_AUTH_TIME=120 * 60
 MIN_AUTH_RENEW_THRESHOLD=15 * 60
 
 class ETradeConfigurationError(Exception):
@@ -222,9 +222,49 @@ class Quote():
         self._quote_data = quote_data
 
         self._price = float(self._quote_data.get("QuoteResponse").get("QuoteData")[0].get("All").get("lastTrade"))
+        self._bid = float(self._quote_data.get("QuoteResponse").get("QuoteData")[0].get("All").get("bid"))
+        self._ask = float(self._quote_data.get("QuoteResponse").get("QuoteData")[0].get("All").get("ask"))
+        self._avg_vol = int(self._quote_data.get("QuoteResponse").get("QuoteData")[0].get("All").get("averageVolume"))
+        self._volume = int(self._quote_data.get("QuoteResponse").get("QuoteData")[0].get("All").get("totalVolume"))
+        self._company_name = self._quote_data.get("QuoteResponse").get("QuoteData")[0].get("All").get("companyName")
+        self._bid_size = int(self._quote_data.get("QuoteResponse").get("QuoteData")[0].get("All").get("bidSize"))
+        self._ask_size = int(self._quote_data.get("QuoteResponse").get("QuoteData")[0].get("All").get("askSize"))
+        self._beta = float(self._quote_data.get("QuoteResponse").get("QuoteData")[0].get("All").get("beta"))
+
+
+        # TODO - yield, dividend, ex-date, div pay date(epoch seconds), p/e ratio, eps, estEarning, 
+        #       - previous close, change from close, change from close %
+        #       - high, low, high52(and date), low52(and date), market cap
+        #       - shares outstanding (the float)
+        # TODO - after hours data (price, bid, ask, volume, change%)
 
     def get_price(self):
         return self._price
+
+    def get_volume(self):
+        return self._volume
+
+    def get_average_volume(self):
+        return self._avg_vol
+
+    def get_bid(self):
+        return self._bid
+
+    def get_bid_size(self):
+        return self._bid_size
+
+    def get_ask(self):
+        return self._ask
+
+    def get_ask_size(self):
+        return self._ask_size
+
+    def get_company_name(self):
+        return self._company_name
+
+    def get_beta(self):
+        return self._beta
+
 
 class OptionChain():
     def __init__(self,symbol,option_data):
