@@ -224,28 +224,63 @@ class Quote():
         self._price = float(self._quote_data.get("QuoteResponse").get("QuoteData")[0].get("All").get("lastTrade"))
         self._bid = float(self._quote_data.get("QuoteResponse").get("QuoteData")[0].get("All").get("bid"))
         self._ask = float(self._quote_data.get("QuoteResponse").get("QuoteData")[0].get("All").get("ask"))
-        self._avg_vol = int(self._quote_data.get("QuoteResponse").get("QuoteData")[0].get("All").get("averageVolume"))
-        self._volume = int(self._quote_data.get("QuoteResponse").get("QuoteData")[0].get("All").get("totalVolume"))
-        self._company_name = self._quote_data.get("QuoteResponse").get("QuoteData")[0].get("All").get("companyName")
         self._bid_size = int(self._quote_data.get("QuoteResponse").get("QuoteData")[0].get("All").get("bidSize"))
         self._ask_size = int(self._quote_data.get("QuoteResponse").get("QuoteData")[0].get("All").get("askSize"))
-        self._beta = float(self._quote_data.get("QuoteResponse").get("QuoteData")[0].get("All").get("beta"))
 
+        self._day_high = float(self._quote_data.get("QuoteResponse").get("QuoteData")[0].get("All").get("high"))
+        self._52week_high = float(self._quote_data.get("QuoteResponse").get("QuoteData")[0].get("All").get("high52"))
+        self._52week_high_date = datetime.datetime.fromtimestamp(int(self._quote_data.get("QuoteResponse").get("QuoteData")[0].get("All").get("week52HiDate")))
+        self._day_low = float(self._quote_data.get("QuoteResponse").get("QuoteData")[0].get("All").get("low"))
+        self._52week_low = float(self._quote_data.get("QuoteResponse").get("QuoteData")[0].get("All").get("low52"))
+        self._52week_low_date = datetime.datetime.fromtimestamp(int(self._quote_data.get("QuoteResponse").get("QuoteData")[0].get("All").get("week52LowDate")))
+
+        self._prev_close = float(self._quote_data.get("QuoteResponse").get("QuoteData")[0].get("All").get("previousClose"))
+        self._change_close = float(self._quote_data.get("QuoteResponse").get("QuoteData")[0].get("All").get("changeClose"))
+        self._change_close_prct = float(self._quote_data.get("QuoteResponse").get("QuoteData")[0].get("All").get("changeClosePercentage"))
+
+        self._company_name = self._quote_data.get("QuoteResponse").get("QuoteData")[0].get("All").get("companyName")
+        self._avg_vol = int(self._quote_data.get("QuoteResponse").get("QuoteData")[0].get("All").get("averageVolume"))
+        self._volume = int(self._quote_data.get("QuoteResponse").get("QuoteData")[0].get("All").get("totalVolume"))
+        self._beta = float(self._quote_data.get("QuoteResponse").get("QuoteData")[0].get("All").get("beta"))
+        self._market_cap = int(self._quote_data.get("QuoteResponse").get("QuoteData")[0].get("All").get("marketCap"))
+        self._float = int(self._quote_data.get("QuoteResponse").get("QuoteData")[0].get("All").get("sharesOutstanding"))
 
         # TODO - yield, dividend, ex-date, div pay date(epoch seconds), p/e ratio, eps, estEarning, 
-        #       - previous close, change from close, change from close %
-        #       - high, low, high52(and date), low52(and date), market cap
-        #       - shares outstanding (the float)
         # TODO - after hours data (price, bid, ask, volume, change%)
 
     def get_price(self):
         return self._price
+
+    def get_prev_close(self):
+        return self._prev_close
+
+    def get_change_close(self):
+        return self._change_close
+
+    def get_change_close_prct(self):
+        return self._change_close_prct
 
     def get_volume(self):
         return self._volume
 
     def get_average_volume(self):
         return self._avg_vol
+
+    def get_market_cap(self):
+        cap = self._market_cap
+        if cap > 10**9:
+            cap = f"{cap / 10**9:.1f}B"
+        elif cap > 10**6:
+            cap = f"{cap / 10**6:.1f}M"
+        return cap
+
+    def get_float(self):
+        fl = self._float
+        if fl > 10**9:
+            fl = f"{fl / 10**9:.1f}B"
+        elif f > 10**6:
+            fl = f"{fl / 10**6:.1f}M"
+        return fl
 
     def get_bid(self):
         return self._bid
@@ -264,6 +299,26 @@ class Quote():
 
     def get_beta(self):
         return self._beta
+
+    def get_day_high(self):
+        return self._day_high
+
+    def get_52week_high(self):
+        return self._52week_high
+
+    def get_52week_high_date(self):
+        d = self._52week_high_date
+        return f"{d.year}-{d.month:02d}-{d.day:02d}"
+
+    def get_day_low(self):
+        return self._day_low
+
+    def get_52week_low(self):
+        return self._52week_low
+
+    def get_52week_low_date(self):
+        d = self._52week_low_date
+        return f"{d.year}-{d.month:02d}-{d.day:02d}"
 
 
 class OptionChain():

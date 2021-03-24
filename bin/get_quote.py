@@ -10,12 +10,18 @@ def main(config_file,symbol,verbose):
     quote = get_quote(config_file, symbol)
     if verbose:
         print(f"{symbol} ({quote.get_company_name()})")
-        print(f"\tPrice : ${quote.get_price():.2f} " + 
-                f"bid=${quote.get_bid():.2f}({quote.get_bid_size()}) " +
-                f"ask=${quote.get_ask():.2f}({quote.get_ask_size()})")
-        print(f"\tVolume: {quote.get_volume()} (avg={quote.get_average_volume()})")
+        print(f"\tPrice     : ${quote.get_price():.2f} / ${quote.get_change_close():.2f} ({quote.get_change_close_prct():.2f}%)")
+        print(f"\tDay Range : ${quote.get_day_low():.2f} - ${quote.get_day_low()}")
+        print(f"\tBid       : ${quote.get_bid():.2f} ({quote.get_bid_size()})")
+        print(f"\tAsk       : ${quote.get_ask():.2f} ({quote.get_ask_size()})")
+        print("\nCompany details")
+        print(f"\tVolume       : {quote.get_volume()} (avg={quote.get_average_volume()})")
+        print(f"\t52 Week High : ${quote.get_52week_high():.2f} ({quote.get_52week_high_date()})")
+        print(f"\t52 Week Low  : ${quote.get_52week_low():.2f} ({quote.get_52week_low_date()})")
+        print(f"\tMarketCap    : ${quote.get_market_cap()}")
+        print(f"\tFloat        : {quote.get_float()} shares")
     else:
-        print(f"{symbol} = {quote.get_price()}")
+        print(f"{symbol}: ${quote.get_price():.2f} / ${quote.get_change_close():.2f} ({quote.get_change_close_prct():.2f}%)")
 
 if __name__ == "__main__":
     # Setup the argument parsing
