@@ -278,7 +278,7 @@ class Quote():
         fl = self._float
         if fl > 10**9:
             fl = f"{fl / 10**9:.1f}B"
-        elif f > 10**6:
+        elif fl > 10**6:
             fl = f"{fl / 10**6:.1f}M"
         return fl
 
