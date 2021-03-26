@@ -15,6 +15,13 @@ DEFAULT_MIN_DOWNSIDE=0.0
 DEFAULT_MIN_DELTA=0.0
 DEFAULT_MAX_DELTA=1.0
 
+PCR_VALUE_OVERSOLD=1.3
+PCR_VALUE_OVERBOUGHT=0.5
+
+PCR_STRING_NORMAL="normal"
+PCR_STRING_OVERSOLD="over sold"
+PCR_STRING_OVERBOUGHT="over bought"
+
 def main(config_file,market_tone_config,symbol,expiration,debug,verbose):
     # Get the market tone config
     tone_config = read_json_file(market_tone_config)
@@ -26,6 +33,13 @@ def main(config_file,market_tone_config,symbol,expiration,debug,verbose):
     quote = get_quote(config_file, symbol)
     stock_price = quote.get_price()
     beta = quote.get_beta()
+
+    pcr = option_chain.get_put_call_ratio()
+    pcr_string = PCR_STRING_NORMAL
+    if pcr >= PCR_VALUE_OVERSOLD:
+        pcr_string = PCR_STRING_OVERSOLD
+    elif pcr <= PCR_VALUE_OVERBOUGHT:
+        pcr_string = PCR_STRING_OVERBOUGHT
 
     days = 0
     count = 0
@@ -124,7 +138,7 @@ def main(config_file,market_tone_config,symbol,expiration,debug,verbose):
         count += 1
 
         if verbose:
-            print(f"{call.get_display_symbol()}: days={days} price={stock_price} premium=${call_premium:.2f}(mark={mark:.2f}) cost=${total_cost:.2f} oi={open_interest} beta={beta:.2f}")
+            print(f"{call.get_display_symbol()}: days={days} price={stock_price} premium=${call_premium:.2f}(mark={mark:.2f}) cost=${total_cost:.2f} oi={open_interest} beta={beta:.2f} pcr={pcr:.2f}({pcr_string})")
             print(f"\tProtection: {100*downside_protection:6.2f}%\t\tDelta : {delta:8.4f}")
             print(f"\tROO       : {100*roo:6.2f}% ({100*roo_annual:6.2f}%)\tProfit: ${100*time_value:7.2f}")
             print(f"\tUpside    : {100*upside:6.2f}% ({100*upside_annual:6.2f})%\tProfit: ${100*stock_upside:7.2f}")

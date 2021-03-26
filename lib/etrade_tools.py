@@ -335,6 +335,10 @@ class OptionChain():
         self._put_options = dict()
         self._strike_prices = set()
 
+        # For determining Put/Call Ratio
+        self._put_open_interest = 0
+        self._call_open_interest = 0
+
         self._parse_option_pairs()
 
     def get_symbol():
@@ -357,8 +361,10 @@ class OptionChain():
 
         if isinstance(option,CallOption):
             self._call_options[strike] = option
+            self._call_open_interest += option.get_open_interest()
         elif isinstance(option,PutOption):
             self._put_options[strike] = option
+            self._put_open_interest += option.get_open_interest()
 
     def get_strike_prices(self):
         return sorted(self._strike_prices)
@@ -368,6 +374,9 @@ class OptionChain():
 
     def get_put_option(self,strike):
         return self._put_options.get(strike)
+
+    def get_put_call_ratio(self):
+        return float(self._put_open_interest) / float(self._call_open_interest)
 
 class OptionChainOption():
     def __init__(self,option_data):
