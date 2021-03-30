@@ -55,6 +55,7 @@ def main(config_file,market_tone_config,symbol,expiration,debug,verbose):
         open_interest = call.get_open_interest()
         call_premium = call.get_bid()
         ask_premium = call.get_ask()
+        max_pain = option_chain.get_max_pain()
         mark = float((call_premium + ask_premium)/2)
 
         intrinsic_value = 0.0
@@ -138,7 +139,8 @@ def main(config_file,market_tone_config,symbol,expiration,debug,verbose):
         count += 1
 
         if verbose:
-            print(f"{call.get_display_symbol()}: days={days} price={stock_price} premium=${call_premium:.2f}(mark={mark:.2f}) cost=${total_cost:.2f} oi={open_interest} beta={beta:.2f} pcr={pcr:.2f}({pcr_string})")
+            print(f"{call.get_display_symbol()}: days={days} price={stock_price} premium=${call_premium:.2f}(mark={mark:.2f}) cost=${total_cost:.2f}")
+            print(f"\tDetails   : oi={open_interest} beta={beta:.2f} pcr={pcr:.2f}({pcr_string}) max pain=${max_pain:.2f}")
             print(f"\tProtection: {100*downside_protection:6.2f}%\t\tDelta : {delta:8.4f}")
             print(f"\tROO       : {100*roo:6.2f}% ({100*roo_annual:6.2f}%)\tProfit: ${100*time_value:7.2f}")
             print(f"\tUpside    : {100*upside:6.2f}% ({100*upside_annual:6.2f})%\tProfit: ${100*stock_upside:7.2f}")

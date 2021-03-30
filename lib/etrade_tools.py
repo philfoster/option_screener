@@ -341,10 +341,13 @@ class OptionChain():
 
         self._parse_option_pairs()
 
+        self._calculate_max_pain()
+
     def get_symbol():
         return self._symbol
 
     def _parse_option_pairs(self):
+        min_dollars = 0
         for option in self._option_data.get("OptionChainResponse").get("OptionPair"):
             self._add_option(CallOption(option.get("Call")))
             self._add_option(PutOption(option.get("Put")))
@@ -377,6 +380,42 @@ class OptionChain():
 
     def get_put_call_ratio(self):
         return float(self._put_open_interest) / float(self._call_open_interest)
+
+    def _calculate_max_pain(self):
+        min_dollars = 0
+        max_pain_strike = None
+        for working_strike in self.get_strike_prices():
+            put_dollars = 0
+            call_dollars = 0
+            for strike in self.get_strike_prices():
+                price_delta = working_strike - strike
+
+                if price_delta > 0:
+                    # Calls are in the money
+                    call_oi = 0
+                    try:
+                        call_oi = self.get_call_option(strike).get_open_interest()
+                    except:
+                        pass
+                    call_dollars += (price_delta * call_oi * 100)
+                elif price_delta < 0:
+                    # Puts are in the money
+                    put_oi = 0
+                    try:
+                        put_oi = self.get_put_option(strike).get_open_interest()
+                    except:
+                        pass
+                    put_dollars += (price_delta * put_oi * -100)
+            total_strike_dollars = call_dollars + put_dollars
+
+            if max_pain_strike is None or (total_strike_dollars < min_dollars):
+                min_dollars = total_strike_dollars
+                max_pain_strike = working_strike
+
+        self._max_pain = max_pain_strike
+
+    def get_max_pain(self):
+        return self._max_pain
 
 class OptionChainOption():
     def __init__(self,option_data):
