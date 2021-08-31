@@ -20,7 +20,8 @@
 			"question": "What sector is the stock?",
 			"type": "sector_selection",
 			"uuid": "d74b4407-243a-41ee-9639-5a6fbb20aa98",
-			"expiration_days" : 365
+			"expiration_days" : 365,
+			"sector_file": "~/.sectors.json"
 		}
 	]
 }

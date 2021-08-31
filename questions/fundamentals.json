@@ -12,7 +12,7 @@
 			"type": "boolean",
 			"uuid": "1887b771-a8ae-473b-9299-68e8353a191f",
 			"blocker" : true,
-			"expiration_days" : 30
+			"expiration_days" : 60
 		}
 	]
 }

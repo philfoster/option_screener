@@ -6,7 +6,6 @@ import glob
 import json
 import re
 from etrade_tools import *
-from os.path import expanduser
 
 DEFAULT_SCREENER_CONFIG_FILE="stock_screener.json"
 
@@ -15,15 +14,13 @@ CACHE_DIR="cache_dir"
 ETRADE_CONFIG="etrade_config"
 QUESTIONS_DIR="questions_directory"
 SYMBOLS_DIR="symbols_directory"
-PRICE_MIN="price_min"
-PRICE_MAX="price_max"
-VOLUME_MIN="volume_min"
 
 # Defaults
 DEFAULT_CACHE_DIR=".answers"
 DEFAULT_PRICE_MIN=15.0
 DEFAULT_PRICE_MAX=375.0
 DEFAULT_VOLUME_MIN=400000
+DEFAULT_SECTOR_FILE="~/.stock_sectors.json"
 
 # Question configuration
 QUESTION_NAME="name"
@@ -33,6 +30,10 @@ QUESTION_TYPE="type"
 QUESTION_ID="uuid"
 QUESTION_BLOCKER="blocker"
 QUESTION_EXPIRATION_DAYS="expiration_days"
+PRICE_MIN="price_min"
+PRICE_MAX="price_max"
+VOLUME_MIN="volume_min"
+SECTOR_FILE="sector_file"
 
 # Cache constants
 CACHE_SYMBOL="symbol"
@@ -133,7 +134,7 @@ def fresh_blocker_screen(screener_config,verbose,symbol,questions):
 
 def cache_answers(verbose,answer_file,answers):
     debug(verbose,f"caching answers to {answer_file}")
-    write_json_file(expanduser(answer_file),answers)
+    write_json_file(answer_file,answers)
 
 def get_answer_file(cache_dir,symbol):
     return f"{cache_dir}/{symbol.upper()}.json"
@@ -262,6 +263,42 @@ def get_answer_from_cache(verbose,answer_file,symbol,question):
     # Didn't find a fresh answer
     return (None,0)
 
+def ask_question_sector(verbose,answer_file,symbol,section,question):
+    (value,expiration_timestamp) = get_answer_from_cache(verbose,answer_file,symbol,question)
+    if value:
+        return (value,expiration_timestamp)
+
+    text = question.get(QUESTION_TEXT)
+    sector_file = question.get(SECTOR_FILE,DEFAULT_SECTOR_FILE)
+
+    sector_list = list()
+    try:
+        sector_list = read_json_file(sector_file)
+    except Exception as e:
+        print(e)
+    
+    if len(sector_list) == 0:
+        value = input(f"\t{symbol}[{section}] {text} ")
+        sector_list.append(value)
+        write_json_file(sector_file,sector_list)
+        return(value,get_current_timestamp() + (86400 * question.get(QUESTION_EXPIRATION_DAYS,0)))
+
+    print("\n\tSelect a sector\n")
+    count = 0
+    for sector in sector_list:
+        count += 1
+        print(f"\t{count:-2d}. {sector}")
+
+    value = input(f"\n\t{symbol}[{section}] {text} (or 'new' for a new sector) ")
+    if value == "new":
+        value = input(f"\t{symbol}[{section}] {text} ")
+        sector_list.append(value)
+        write_json_file(sector_file,sorted(sector_list))
+        return(value,get_current_timestamp() + (86400 * question.get(QUESTION_EXPIRATION_DAYS,0)))
+    
+    sector_value = sector_list[int(value)-1]
+    return(sector_value,get_current_timestamp() + (86400 * question.get(QUESTION_EXPIRATION_DAYS,0)))
+
 def ask_question(verbose,screener_config,answer_file,symbol,section,question):
     question_type = question.get(QUESTION_TYPE)
 
@@ -273,6 +310,8 @@ def ask_question(verbose,screener_config,answer_file,symbol,section,question):
         return check_volume(screener_config,verbose,answer_file,symbol,section,question)
     elif question_type == TYPE_EARNINGS:
         return ask_question_earnings(verbose,answer_file,symbol,section,question)
+    elif question_type == TYPE_SECTOR:
+        return ask_question_sector(verbose,answer_file,symbol,section,question)
     else:
         text = question.get(QUESTION_TEXT)
         print(f"\t{symbol}[{section}] Unkown questions type {question_type}({text})")
@@ -285,11 +324,11 @@ def get_current_timestamp():
 def ask_question_boolean(verbose,answer_file,symbol,section,question):
     # Get the boolean from cache and return it
     (value,expiration_timestamp) = get_answer_from_cache(verbose,answer_file,symbol,question)
-    if value:
+    if value is not None:
         return (value,expiration_timestamp)
 
     text = question.get(QUESTION_TEXT)
-    value  = input(f"\t{symbol}[{section}] {text} [y/N] ")
+    value = input(f"\t{symbol}[{section}] {text} [y/N] ")
     if value.lower().startswith("y"):
         return(True,get_current_timestamp() + (86400 * question.get(QUESTION_EXPIRATION_DAYS,0)))
     else:
@@ -305,7 +344,7 @@ def ask_question_earnings(verbose,answer_file,symbol,section,question):
     next_monthly = get_next_monthly_expiration()
 
     while True:
-        value  = input(f"\t{symbol}[{section}] {text} (YYYY-MM-DD): ")
+        value = input(f"\t{symbol}[{section}] {text} (YYYY-MM-DD): ")
         match = re.search(r'^\s*(\d\d\d\d)-(\d\d)-(\d\d)\s*$',value)
         if match:
             year = int(match.group(1))

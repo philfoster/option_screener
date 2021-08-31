@@ -199,11 +199,11 @@ def _read_authtoken_file(authtoken_file):
     return authtoken_data
 
 def write_json_file(filename,data):
-    with open(filename, "w") as f:
-        f.write(json.dumps(data))
+    with open(expanduser(filename), "w") as f:
+        f.write(json.dumps(data,indent=2))
 
 def _write_authtoken_file(authtoken_file,token_data):
-    write_json_file(expanduser(authtoken_file),token_data)
+    write_json_file(authtoken_file,token_data)
 
 def _generate_authtoken(authtoken_file,consumer_key,consumer_secret,sandbox):
     authtoken_data = authenticate(consumer_key,consumer_secret)
