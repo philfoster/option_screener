@@ -1,0 +1,27 @@
+{
+	"name": "Company Information",
+	"questions": [
+		{
+			"question": "Is the price in the desired range?",
+			"type": "price_filter",
+			"uuid": "f0db3e7c-885c-42fa-b826-c48a5495cc08",
+			"price_min": 20.0,
+			"price_max": 400.0,
+			"expiration_days" : 3
+		},
+		{
+			"question": "Is the volume high enough?",
+			"type": "volume_filter",
+			"uuid": "67924682-631e-4c4d-844a-d964b974d300",
+			"volume_min": 500000,
+			"expiration_days" : 3
+		},
+		{
+			"question": "What sector is the stock?",
+			"type": "sector_selection",
+			"uuid": "d74b4407-243a-41ee-9639-5a6fbb20aa98",
+			"expiration_days" : 365
+		}
+	]
+}
+

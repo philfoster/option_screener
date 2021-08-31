@@ -1,0 +1,18 @@
+{
+	"name": "Fundamentals",
+	"questions": [
+		{
+			"question": "When is the next earnings announcement?",
+			"type": "earnings_date",
+			"uuid": "409a6708-7045-4df2-a705-c238980e7cf1",
+			"blocker" : true
+		},
+		{
+			"question": "Is the average analyst rating better than neutral?",
+			"type": "boolean",
+			"uuid": "1887b771-a8ae-473b-9299-68e8353a191f",
+			"blocker" : true,
+			"expiration_days" : 30
+		}
+	]
+}

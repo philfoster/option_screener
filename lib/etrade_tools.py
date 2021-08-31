@@ -63,6 +63,28 @@ def get_option_chain(config_file, symbol, expiration_date):
         raise OptionChainNotFoundError(f"could not find option chain for {expiration_date}")
     return option_chain
 
+def get_next_monthly_expiration():
+    """ Returns a datetime object for the options expiration date"""
+    now = datetime.datetime.now()
+    third_friday = get_third_friday(now.year,now.month)
+
+    if now < third_friday:
+        return third_friday
+    else:
+        if now.month < 12:
+            return get_third_friday(now.year,now.month + 1)
+        else:
+            return get_third_friday(now.year+1,1)
+        
+def get_third_friday(year,month):
+    first = datetime.datetime(year,month,1)
+    WEEKDAY_SATURDAY = 5
+    if first.weekday() < WEEKDAY_SATURDAY:
+        return datetime.datetime(first.year,first.month,19-first.weekday(),23,59,59)
+    else:
+        return datetime.datetime(first.year,first.month,26-first.weekday(),23,59,59)
+    
+
 def read_json_file(json_file):
     """ Read in a json file and return a json data structure """
     json_data = None
@@ -176,9 +198,12 @@ def _read_authtoken_file(authtoken_file):
 
     return authtoken_data
 
+def write_json_file(filename,data):
+    with open(filename, "w") as f:
+        f.write(json.dumps(data))
+
 def _write_authtoken_file(authtoken_file,token_data):
-    with open(expanduser(authtoken_file), "w") as tf:
-        tf.write(json.dumps(token_data))
+    write_json_file(expanduser(authtoken_file),token_data)
 
 def _generate_authtoken(authtoken_file,consumer_key,consumer_secret,sandbox):
     authtoken_data = authenticate(consumer_key,consumer_secret)
@@ -205,13 +230,15 @@ def _get_authtoken(config_file):
     (creds_file, authtoken_file) = _get_etrade_config(config_file)
     authtoken_data = _get_authtoken_data(config_file)
 
-    consumer_key = authtoken_data.get(PROPERTIES_CONSUMER_KEY)
-    consumer_secret = authtoken_data.get(PROPERTIES_CONSUMER_SECRET)
-    sandbox = authtoken_data.get(PROPERTIES_SANDBOX)
-
     if authtoken_data is None:
+        (creds_file, authtoken_file) = _get_etrade_config(config_file)
+        (consumer_key, consumer_secret, sandbox) = _get_etrade_credentials(creds_file)
         return _generate_authtoken(authtoken_file,consumer_key,consumer_secret,sandbox)
     elif int(time.time() - authtoken_data.get(PROPERTIES_LAST_AUTH_TIME,0)) > MAX_AUTH_TIME:
+        consumer_key = authtoken_data.get(PROPERTIES_CONSUMER_KEY)
+        consumer_secret = authtoken_data.get(PROPERTIES_CONSUMER_SECRET)
+        sandbox = authtoken_data.get(PROPERTIES_SANDBOX)
+
         return _generate_authtoken(authtoken_file,consumer_key,consumer_secret,sandbox)
 
     renew_authtoken(config_file,False)
@@ -441,6 +468,9 @@ class OptionChainOption():
 
     def get_open_interest(self):
         return int(self._option_data.get("openInterest"))
+
+    def get_adjusted_flag(self):
+        return bool(self._option_data.get("adjustedFlag"))
 
     def get_theta(self):
         return float(self._option_data.get("OptionGreeks").get("theta"))
