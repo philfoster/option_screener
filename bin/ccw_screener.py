@@ -52,6 +52,12 @@ def main(config_file,market_tone_config,symbol,expiration,debug,verbose):
 
         call = option_chain.get_call_option(strike_price)
 
+        if call.get_adjusted_flag is False:
+            if debug:
+                print(f"{call.get_display_symbol()} is an adjusted option, skipping")
+            continue
+            
+
         open_interest = call.get_open_interest()
         call_premium = call.get_bid()
         ask_premium = call.get_ask()
