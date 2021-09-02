@@ -62,10 +62,10 @@
 			Upside    :   0.56% (  8.54)%   Profit: $  67.00
 			Total     :   4.48% ( 68.10%)   Total : $ 537.00
 
-	bin/stock_screner.py  -- Loop across symbols in a directory of watch lists, filter the results based
+	bin/stock_screener.py  -- Loop across symbols in a directory of watch lists, filter the results based
 							 on a number of configurable questions. The question has an expiration time
 							 to prevent asking the same question with the cached answer is still fresh.
-		$ bin/stock_screner.py --help
+		$ bin/stock_screener.py --help
 		usage: stock_screener.py [-h] [-c CONFIG_FILE] [-v] [-q]
 
 		optional arguments:
@@ -75,7 +75,7 @@
 		  -v, --verbose         Increase verbosity
 		  -q, --quote           Include a quote in the summary
 
-		$ bin/stock_screner.py
+		$ bin/stock_screener.py
 		bin/stock_screener.py
 
 				Select a sector (ABT)
