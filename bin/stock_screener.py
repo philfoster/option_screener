@@ -20,6 +20,7 @@ DEFAULT_CACHE_DIR=".answers"
 DEFAULT_PRICE_MIN=15.0
 DEFAULT_PRICE_MAX=375.0
 DEFAULT_VOLUME_MIN=400000
+DEFAULT_OPEN_INTEREST_MIN=50
 DEFAULT_SECTOR_FILE="~/.stock_sectors.json"
 
 # Question configuration
@@ -34,6 +35,7 @@ PRICE_MIN="price_min"
 PRICE_MAX="price_max"
 VOLUME_MIN="volume_min"
 SECTOR_FILE="sector_file"
+OPEN_INTEREST_MIN="open_interest_min"
 
 # Cache constants
 CACHE_SYMBOL="symbol"
@@ -47,43 +49,42 @@ TYPE_EARNINGS="earnings_date"
 TYPE_SECTOR="sector_selection"
 TYPE_PRICE="price_filter"
 TYPE_VOLUME="volume_filter"
+TYPE_OPEN_INTEREST="open_interest_filter"
 
 def main(screener_config_file,verbose):
     screener_config = read_json_file(screener_config_file)
     symbols = get_symbols(screener_config.get(SYMBOLS_DIR))
     questions = get_questions(screener_config.get(QUESTIONS_DIR))
 
-    passing = list()
+    passing = dict()
     for symbol in sorted(symbols):
-        passed = screen_symbol(screener_config,verbose,symbol,questions)
+        (passed,score) = screen_symbol(screener_config,verbose,symbol,questions)
         if passed:
-            passing.append(symbol)
+            passing[symbol] = score
 
     if len(passing) == 0:
         print(f"\nno valid symbols found")
     else:
         print("\nValid Symbols")
         print("-------------")
-    for symbol in passing:
-        print(f"\t{symbol}")
+    for symbol in passing.keys():
+        score = passing.get(symbol)
+        
+        quote = get_quote(screener_config.get(ETRADE_CONFIG), symbol)
+        print(f"\t{symbol:5s} (score={score:-6.2f}%, price=${quote.get_price():7.2f})")
 
 def screen_symbol(screener_config,verbose,symbol,questions):
 
     if fresh_blocker_screen(screener_config,verbose,symbol,questions) is False:
         debug(verbose,f"{symbol} failed fresh blocker screen")
-        return False
-
-    #if automatic_screen(screener_config,verbose,symbol) is False:
-    #    debug(verbose,f"{symbol} failed automatic screen")
-    #    return False
+        return (False,0.0)
 
     answer_file = get_answer_file(screener_config.get(CACHE_DIR),symbol)
     answers = dict()
     answers[CACHE_SYMBOL] = symbol
 
-    print(f"\nSymbol: {symbol}")
-
-    non_blocker_false_count = 0
+    true_count = 0
+    total_count = 0
     for section in sorted(questions.keys()):
         for question in questions[section].get(QUESTION_LIST):
             question_id = question.get(QUESTION_ID)
@@ -101,15 +102,17 @@ def screen_symbol(screener_config,verbose,symbol,questions):
             answers[question_id][CACHE_QUESTION] = question.get(QUESTION_TEXT)
 
             if isinstance(value,bool):
+                total_count += 1
                 if value is False:
                     if question.get(QUESTION_BLOCKER,False):
                         debug(verbose,f"skipping {symbol}, blocker question {question_id} failed")
                         cache_answers(verbose,answer_file,answers)
-                        return False
-                    else:
-                        non_blocker_false_count = 0
+                        return (False,0.0)
+                else:
+                    true_count += 1
+    
     cache_answers(verbose,answer_file,answers)
-    return True
+    return (True,float(true_count/total_count)*100)
 
 def fresh_blocker_screen(screener_config,verbose,symbol,questions):
     answer_file = get_answer_file(screener_config.get(CACHE_DIR),symbol)
@@ -157,7 +160,7 @@ def check_price(screener_config,verbose,answer_file,symbol,section,question):
         quote = get_quote(screener_config.get(ETRADE_CONFIG), symbol)
     except SymbolNotFoundError as e:
         debug(verbose,f"{symbol} does not exist")
-        return (False,datetime.datetime(2037,12,31))
+        return (False,datetime.datetime(2037,12,31).timestamp())
     
     price = quote.get_price()
 
@@ -177,6 +180,7 @@ def check_price(screener_config,verbose,answer_file,symbol,section,question):
     else:
         debug(verbose,f"{symbol} price ${price:.2f} is too high")
         return(False,get_current_timestamp() + (86400 * question.get(QUESTION_EXPIRATION_DAYS,0)))
+    debug(verbose,f"check price for {symbol} passed")
     return(True,get_current_timestamp() + (86400 * question.get(QUESTION_EXPIRATION_DAYS,0)))
 
 def check_volume(screener_config,verbose,answer_file,symbol,section,question):
@@ -189,7 +193,7 @@ def check_volume(screener_config,verbose,answer_file,symbol,section,question):
         quote = get_quote(screener_config.get(ETRADE_CONFIG), symbol)
     except SymbolNotFoundError as e:
         debug(verbose,f"{symbol} does not exist")
-        return (False,datetime.datetime(2037,12,31))
+        return (False,datetime.datetime(2037,12,31).timestamp())
     
     avg_vol = quote.get_average_volume()
     volume_min = question.get(VOLUME_MIN,DEFAULT_VOLUME_MIN)
@@ -200,46 +204,33 @@ def check_volume(screener_config,verbose,answer_file,symbol,section,question):
         return(False,get_current_timestamp() + (86400 * question.get(QUESTION_EXPIRATION_DAYS,0)))
     return(True,get_current_timestamp() + (86400 * question.get(QUESTION_EXPIRATION_DAYS,0)))
 
-def automatic_screen(screener_config,verbose,symbol):
+def check_open_interest(screener_config,verbose,answer_file,symbol,section,question):
+    # Get the boolean from cache and return it
+    (value,expiration_timestamp) = get_answer_from_cache(verbose,answer_file,symbol,question)
+    if value:
+        return (value,expiration_timestamp)
+
     try: 
-        quote = get_quote(screener_config.get(ETRADE_CONFIG), symbol)
-    except SymbolNotFoundError as e:
-        debug(verbose,f"{symbol} does not exist")
-        return False
+        next_monthly = get_next_monthly_expiration()
+        next_date = f"{next_monthly.year}-{next_monthly.month:02d}-{next_monthly.day:02d}"
+        debug(verbose,f"fetching options chain for {symbol} {next_date}")
+        option_chain = get_option_chain(screener_config.get(ETRADE_CONFIG), symbol, next_monthly)
+    except Exception as e:
+        debug(verbose,f"error fetching options chain: {e}")
+        return (False,0)
+    
+    open_interest_min = question.get(OPEN_INTEREST_MIN,DEFAULT_OPEN_INTEREST_MIN)
 
-    price = quote.get_price()
-    avg_vol = quote.get_average_volume()
+    for strike_price in option_chain.get_strike_prices():
+        call = option_chain.get_call_option(strike_price)
+        open_interest = call.get_open_interest()
+        if open_interest >= open_interest_min:
+            debug(verbose,f"found open interest {open_interest} for {symbol} strike {strike_price} on {next_date}")
+            return(True,next_monthly.timestamp())
 
-    price_min = screener_config.get(PRICE_MIN,DEFAULT_PRICE_MIN)
-    price_max = screener_config.get(PRICE_MAX,DEFAULT_PRICE_MAX)
-    vol_min = screener_config.get(AVG_VOL_MIN,DEFAULT_AVG_VOL_MIN)
-
-    answers = get_all_answers_from_cache(verbose,get_answer_file(screener_config.get(CACHE_DIR),symbol))
-    answers[CACHE_SYMBOL] = symbol
-
-    # Price is greater than or euqal to price_mmin
-    if price >= price_min:
-        debug(verbose,f"{symbol} price ${price:.2f} is higher than {PRICE_MIN}(${price_min:.2f})")
-    else:
-        debug(verbose,f"{symbol} price ${price:.2f} is too low")
-        return False
-
-    # Price is less than or equal to price_max
-    if price <= price_max:
-        debug(verbose,f"{symbol} price ${price:.2f} is lower than {PRICE_MAX}(${price_max:.2f})")
-    else:
-        debug(verbose,f"{symbol} price ${price:.2f} is too high")
-        return False
-
-    # 10day volume is greater than volume_min
-    if avg_vol >= vol_min:
-        debug(verbose,f"{symbol} average volume {avg_vol} is higher than {AVG_VOL_MIN}(vol_min)")
-    else:
-        debug(verbose,f"{symbol} average volume {avg_vol} is too low")
-        return False
-
-    debug(verbose,f"{symbol} passed all automatic tests")
-    return True
+    # Didn't find sufficient open interest
+    debug(verbose,f"did not find sufficient open interest for {symbol} on {next_date}")
+    return(False,next_monthly.timestamp())
 
 def debug(verbose,message):
     if verbose:
@@ -283,7 +274,7 @@ def ask_question_sector(verbose,answer_file,symbol,section,question):
         write_json_file(sector_file,sector_list)
         return(value,get_current_timestamp() + (86400 * question.get(QUESTION_EXPIRATION_DAYS,0)))
 
-    print("\n\tSelect a sector\n")
+    print(f"\n\tSelect a sector ({symbol})\n")
     count = 0
     for sector in sector_list:
         count += 1
@@ -312,6 +303,8 @@ def ask_question(verbose,screener_config,answer_file,symbol,section,question):
         return ask_question_earnings(verbose,answer_file,symbol,section,question)
     elif question_type == TYPE_SECTOR:
         return ask_question_sector(verbose,answer_file,symbol,section,question)
+    elif question_type == TYPE_OPEN_INTEREST:
+        return check_open_interest(screener_config,verbose,answer_file,symbol,section,question)
     else:
         text = question.get(QUESTION_TEXT)
         print(f"\t{symbol}[{section}] Unkown questions type {question_type}({text})")
@@ -337,7 +330,7 @@ def ask_question_boolean(verbose,answer_file,symbol,section,question):
 def ask_question_earnings(verbose,answer_file,symbol,section,question):
     # Get the boolean from cache and return it
     (value,expiration_timestamp) = get_answer_from_cache(verbose,answer_file,symbol,question)
-    if value:
+    if value is not None:
         return (value,expiration_timestamp)
 
     text = question.get(QUESTION_TEXT)

@@ -7,6 +7,7 @@
 			"uuid": "f0db3e7c-885c-42fa-b826-c48a5495cc08",
 			"price_min": 20.0,
 			"price_max": 400.0,
+			"blocker" : true,
 			"expiration_days" : 3
 		},
 		{
@@ -14,7 +15,15 @@
 			"type": "volume_filter",
 			"uuid": "67924682-631e-4c4d-844a-d964b974d300",
 			"volume_min": 500000,
+			"blocker" : true,
 			"expiration_days" : 3
+		},
+		{
+			"question": "Is there enough open interest in the next option period?",
+			"type": "open_interest_filter",
+			"uuid": "93592be4-9b40-4cbf-910a-780713ba6714",
+			"open_interest_min": 50,
+			"blocker" : true
 		},
 		{
 			"question": "What sector is the stock?",
