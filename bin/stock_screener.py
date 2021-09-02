@@ -55,7 +55,7 @@ TYPE_PRICE="price_filter"
 TYPE_VOLUME="volume_filter"
 TYPE_OPEN_INTEREST="open_interest_filter"
 
-def main(screener_config_file):
+def main(screener_config_file,summary_quote):
     screener_config = read_json_file(screener_config_file)
     symbols = get_symbols(screener_config.get(SYMBOLS_DIR))
     questions = get_questions(screener_config.get(QUESTIONS_DIR))
@@ -74,8 +74,11 @@ def main(screener_config_file):
     for symbol in passing.keys():
         score = passing.get(symbol)
         
-        quote = stock_quote(screener_config.get(ETRADE_CONFIG), symbol)
-        print(f"\t{symbol:5s} (score={score:-6.2f}%, price=${quote.get_price():7.2f})")
+        if summary_quote:
+            quote = stock_quote(screener_config.get(ETRADE_CONFIG), symbol)
+            print(f"\t{symbol:5s} (score={score:-6.2f}%, price=${quote.get_price():7.2f})")
+        else:
+            print(f"\t{symbol:5s} (score={score:-6.2f})%")
 
 def stock_quote(etrade_config,symbol):
     quote = GLOBAL_QUOTE_CACHE.get(symbol,None)
@@ -395,8 +398,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('-c','--config-file', dest='config_file', help="etrade configuration file", default=DEFAULT_SCREENER_CONFIG_FILE)
     parser.add_argument('-v','--verbose', dest='verbose', required=False,default=False,action='store_true',help="Increase verbosity")
+    parser.add_argument('-q','--quote', dest='summary_quote', required=False,default=False,action='store_true',help="Include a quote in the summary")
     args = parser.parse_args()
     GLOBAL_VERBOSE = args.verbose
     GLOBAL_QUOTE_CACHE = dict()
-    main(args.config_file)
+    main(args.config_file,args.summary_quote)
 
