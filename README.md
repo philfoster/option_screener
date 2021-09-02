@@ -14,7 +14,7 @@
 	https://github.com/jessecooper/pyetrade
 
 # scripts
-	bin/get_quote.py
+	bin/get_quote.py  -- Get a real time quote for a symbol
 		$ bin/get_quote.py -h
 		usage: get_quote.py [-h] [-c CONFIG_FILE] -s SYMBOL [-v]
 
@@ -31,8 +31,8 @@
 			Price : $119.33 bid=$120.55(100) ask=$120.87(100)
 			Volume: 11981 (avg=9520524)
 
-	ccw_screener.py
-		$ ./ccw_screener.py -h
+	bin/ccw_screener.py  -- Search the option chain for a symbol for call options that match the criteria
+		$ bin/ccw_screener.py -h
 		usage: ccw_screener.py [-h] [-c CONFIG_FILE] -s SYMBOL [-e EXPIRATION] [-d]
 				       [-v] -m MARKET_TONE
 
@@ -49,7 +49,7 @@
 		  -m MARKET_TONE, --market-tone MARKET_TONE
 					Market tone configuration
 
-		$ ./ccw_screener.py -e 2021-04-16 -v -m tone/market-neutral.json -s AMAT
+		$ bin/ccw_screener.py -e 2021-04-16 -v -m tone/market-neutral.json -s AMAT
 		AMAT Apr 16 '21 $115 Call: days=24 price=119.33 premium=$7.35(mark=7.53) cost=$11198.00 oi=2876 beta=1.78
 			Protection:   3.63%             Delta :   0.6581
 			ROO       :   2.63% ( 39.94%)   Profit: $ 302.00
@@ -61,6 +61,58 @@
 			ROO       :   3.92% ( 59.57%)   Profit: $ 470.00
 			Upside    :   0.56% (  8.54)%   Profit: $  67.00
 			Total     :   4.48% ( 68.10%)   Total : $ 537.00
+
+	bin/stock_screner.py  -- Loop across symbols in a directory of watch lists, filter the results based
+							 on a number of configurable questions. The question has an expiration time
+							 to prevent asking the same question with the cached answer is still fresh.
+		$ bin/stock_screner.py --help
+		usage: stock_screener.py [-h] [-c CONFIG_FILE] [-v] [-q]
+
+		optional arguments:
+		  -h, --help            show this help message and exit
+		  -c CONFIG_FILE, --config-file CONFIG_FILE
+								etrade configuration file
+		  -v, --verbose         Increase verbosity
+		  -q, --quote           Include a quote in the summary
+
+		$ bin/stock_screner.py
+		bin/stock_screener.py
+
+				Select a sector (ABT)
+
+				 1. Automobiles & Auto Parts
+				 2. Banking Services
+				...
+				17. Paper & Forest Products
+				18. Pharmaceuticals
+				19. Professional & Commercial Services
+				20. Semiconductors
+				21. Software & IT Services
+				22. Textiles & Apparel
+
+				ABT[Company Information] What sector is the stock? (or 'new' for a new sector) 18
+				ABT[Fundamentals] When is the next earnings announcement? (YYYY-MM-DD): 2021-10-20
+				ABT[Fundamentals] Is the average analyst rating better than neutral? [y/N] y
+				ABT[Technicals] Is the stock price up trending? [y/N] y
+				ABT[Technicals] Is the price above the 20 day EMA? [y/N] y
+				ABT[Technicals] Is the 20 day EMA trending up? [y/N] y
+				ABT[Technicals] Is the 20 day EMA above the 100 day EMA? [y/N] y
+				ABT[Technicals] Is the 100 day EMA trending up? [y/N] y
+				ABT[Technicals] Is the MACD trending up? [y/N] y
+				ABT[Technicals] Is the MACD divergence positive? [y/N] y
+				ABT[Technicals] Is the MACD greater than zero? [y/N] y
+				ABT[Technicals] Is the stochastic oscilator positive? [y/N] y
+				ABT[Technicals] Is the stochastic oscilator uptrending? [y/N] y
+				ABT[Technicals] Is the stochastic oscilator greater than 20? [y/N] y
+				ABT[Technicals] Is the On Balance Volume positive?  [y/N] y
+				ABT[Technicals] Is the On Balance Volume trending up?  [y/N] y
+				ABT[Technicals] Is the volume greater than than moving average?  [y/N] y
+
+		Valid Symbols
+		-------------
+				A     (score= 94.74)%
+				ABT   (score=100.00)%
+				...
 
 # Configuration
 	etrade.json - this is the base configuration file that points to other configs
