@@ -2,8 +2,5 @@
 	"cache_dir": "~/.stock_screener",
 	"etrade_config": "etrade.json",
 	"symbols_directory": "./symbols",
-	"questions_directory": "./questions",
-	"price_min": 20.0,
-	"price_max": 400,
-	"volume_min": 500000
+	"questions_directory": "./questions"
 }
