@@ -9,6 +9,11 @@
 	browser, where you authenticate and are given a code. Paste the code
 	at the prompt to cache the auth token.
 
+	This project is heavily inspired by Alan Elman (The Blue Collar Investor)
+	To understand the goals laid out here, watch his youtube videos on 
+	'Beginner's Corner for Covered Call Writing' or visit his website at
+	https://www.thebluecollarinvestor.com
+
 # Requirements
 	This code requires the excellent pyetrade API from Jesse Cooper
 	https://github.com/jessecooper/pyetrade
@@ -16,7 +21,7 @@
 	Additionally, this module requires an active E*Trade account and an
 	API key (available from E*Trade customer service)
 
-# scripts
+# scripts and tools
 	bin/get_quote.py  -- Get a real time quote for a symbol
 		$ bin/get_quote.py -h
 		usage: get_quote.py [-h] [-c CONFIG_FILE] -s SYMBOL [-v]
@@ -47,7 +52,7 @@
 					Symbol to search
 		  -e EXPIRATION, --expiration EXPIRATION
 					Expiration Date <YYYY-MM-DD>
-		  -d, --debug           Expiration Date <YYYY-MM-DD>
+		  -d, --debug           Enable debugging
 		  -v, --verbose         Increase verbosity
 		  -m MARKET_TONE, --market-tone MARKET_TONE
 					Market tone configuration
