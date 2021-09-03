@@ -366,10 +366,10 @@ def ask_question_earnings(answer_file,symbol,section,question):
             earnings_date = datetime.datetime(year,month,day,0,00,1)
             if earnings_date < next_monthly:
                 debug(f"earnings date {earnings_date} is before next_monthly={next_monthly}")
-                return (False,int(earnings_date.timestamp()))
+                return (False,int(earnings_date.timestamp() + (86400*3)))
             else:
                 debug(f"earnings date {earnings_date} is after next_monthly={next_monthly}")
-                return (True,int(earnings_date.timestamp()))
+                return (True,int(earnings_date.timestamp() + (86400*3)))
         else:
             print("\n*** format error, try again MMMM-YY-DD***")
 
