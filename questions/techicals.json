@@ -37,23 +37,23 @@
 			"expiration_days" : 3
 		},
 		{
-			"question": "Is the MACD trending up?",
+			"question": "Is the On Balance Volume positive? ",
 			"type": "boolean",
-			"uuid": "1a8c7983-b0d2-410f-82d4-1aa296f385b3",
-			"blocker" : false,
+			"uuid": "e30cc0ba-5b6e-43bf-a3d0-29a0b621a34d",
+			"blocker" : true,
 			"expiration_days" : 3
 		},
 		{
-			"question": "Is the MACD divergence positive?",
+			"question": "Is the On Balance Volume trending up? ",
 			"type": "boolean",
-			"uuid": "f5f5352e-2af9-4734-bc34-4ef1f1aac763",
-			"blocker" : false,
+			"uuid": "87489c8b-4115-453d-8830-0324158d82d8",
+			"blocker" : true,
 			"expiration_days" : 3
 		},
 		{
-			"question": "Is the MACD greater than zero?",
+			"question": "Is the volume greater than than moving average? ",
 			"type": "boolean",
-			"uuid": "b67a5024-7b64-4712-b1a0-d1cf49c3ec33",
+			"uuid": "9f407e44-e809-498f-942c-b688f19585d2",
 			"blocker" : false,
 			"expiration_days" : 3
 		},
@@ -79,23 +79,23 @@
 			"expiration_days" : 3
 		},
 		{
-			"question": "Is the On Balance Volume positive? ",
+			"question": "Is the MACD trending up?",
 			"type": "boolean",
-			"uuid": "e30cc0ba-5b6e-43bf-a3d0-29a0b621a34d",
-			"blocker" : true,
+			"uuid": "1a8c7983-b0d2-410f-82d4-1aa296f385b3",
+			"blocker" : false,
 			"expiration_days" : 3
 		},
 		{
-			"question": "Is the On Balance Volume trending up? ",
+			"question": "Is the MACD divergence positive?",
 			"type": "boolean",
-			"uuid": "87489c8b-4115-453d-8830-0324158d82d8",
-			"blocker" : true,
+			"uuid": "f5f5352e-2af9-4734-bc34-4ef1f1aac763",
+			"blocker" : false,
 			"expiration_days" : 3
 		},
 		{
-			"question": "Is the volume greater than than moving average? ",
+			"question": "Is the MACD greater than zero?",
 			"type": "boolean",
-			"uuid": "9f407e44-e809-498f-942c-b688f19585d2",
+			"uuid": "b67a5024-7b64-4712-b1a0-d1cf49c3ec33",
 			"blocker" : false,
 			"expiration_days" : 3
 		}
