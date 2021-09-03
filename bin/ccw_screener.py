@@ -164,7 +164,7 @@ if __name__ == "__main__":
     parser.add_argument('-c','--config-file', dest='config_file', help="etrade configuration file", default=DEFAULT_CONFIG_FILE)
     parser.add_argument('-s','--symbol', dest='symbol', required=True,help="Symbol to search" )
     parser.add_argument('-e','--expiration', dest='expiration', required=False,default=None,help="Expiration Date <YYYY-MM-DD>" )
-    parser.add_argument('-d','--debug', dest='debug', required=False,default=False,action='store_true',help="Expiration Date <YYYY-MM-DD>" )
+    parser.add_argument('-d','--debug', dest='debug', required=False,default=False,action='store_true',help="Enable debugging" )
     parser.add_argument('-v','--verbose', dest='verbose', required=False,default=False,action='store_true',help="Increase verbosity")
     parser.add_argument('-m','--market-tone', dest='market_tone', required=True,help="Market tone configuration" )
 
