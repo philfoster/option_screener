@@ -1,0 +1,103 @@
+{
+	"name": "Technicals",
+	"questions": [
+		{
+			"question": "Is the stock price up trending?",
+			"type": "boolean",
+			"uuid": "9a21bbe0-3971-48e2-a84f-e09fa871a916",
+			"blocker" : true,
+			"expiration_days" : 3
+		},
+		{
+			"question": "Is the price above the 20 day EMA?",
+			"type": "boolean",
+			"uuid": "153c0da1-461c-442c-ae7e-c0428823f3e7",
+			"blocker" : true,
+			"expiration_days" : 3
+		},
+		{
+			"question": "Is the 20 day EMA trending up?",
+			"type": "boolean",
+			"uuid": "dd2bbe54-a68c-4cd0-ac3d-26038d622318",
+			"blocker" : true,
+			"expiration_days" : 3
+		},
+		{
+			"question": "Is the 20 day EMA above the 100 day EMA?",
+			"type": "boolean",
+			"uuid": "58735e6c-74f8-4c6b-8d73-6f7b7e942d71",
+			"blocker" : true,
+			"expiration_days" : 3
+		},
+		{
+			"question": "Is the 100 day EMA trending up?",
+			"type": "boolean",
+			"uuid": "0ba7df53-0911-4af6-b18c-e31e17c264a5",
+			"blocker" : true,
+			"expiration_days" : 3
+		},
+		{
+			"question": "Is the On Balance Volume positive? ",
+			"type": "boolean",
+			"uuid": "e30cc0ba-5b6e-43bf-a3d0-29a0b621a34d",
+			"blocker" : true,
+			"expiration_days" : 3
+		},
+		{
+			"question": "Is the On Balance Volume trending up? ",
+			"type": "boolean",
+			"uuid": "87489c8b-4115-453d-8830-0324158d82d8",
+			"blocker" : true,
+			"expiration_days" : 3
+		},
+		{
+			"question": "Is the volume greater than than moving average? ",
+			"type": "boolean",
+			"uuid": "9f407e44-e809-498f-942c-b688f19585d2",
+			"blocker" : false,
+			"expiration_days" : 3
+		},
+		{
+			"question": "Is the stochastic oscilator positive?",
+			"type": "boolean",
+			"uuid": "5f688dd9-8451-4f41-acc0-26c1e485fc5c",
+			"blocker" : false,
+			"expiration_days" : 3
+		},
+		{
+			"question": "Is the stochastic oscilator uptrending?",
+			"type": "boolean",
+			"uuid": "8ebf903c-110a-4ff3-8c73-95ab6323fec8",
+			"blocker" : false,
+			"expiration_days" : 3
+		},
+		{
+			"question": "Is the stochastic oscilator greater than 20?",
+			"type": "boolean",
+			"uuid": "0122c7e7-bc9c-4879-8492-e8f9f7e25940",
+			"blocker" : false,
+			"expiration_days" : 3
+		},
+		{
+			"question": "Is the MACD trending up?",
+			"type": "boolean",
+			"uuid": "1a8c7983-b0d2-410f-82d4-1aa296f385b3",
+			"blocker" : false,
+			"expiration_days" : 3
+		},
+		{
+			"question": "Is the MACD divergence positive?",
+			"type": "boolean",
+			"uuid": "f5f5352e-2af9-4734-bc34-4ef1f1aac763",
+			"blocker" : false,
+			"expiration_days" : 3
+		},
+		{
+			"question": "Is the MACD greater than zero?",
+			"type": "boolean",
+			"uuid": "b67a5024-7b64-4712-b1a0-d1cf49c3ec33",
+			"blocker" : false,
+			"expiration_days" : 3
+		}
+	]
+}

@@ -1,0 +1,9 @@
+{
+	"min_open_interest": 50,
+	"min_annual_roo": 0.36,
+	"max_annual_roo": 1.44,
+	"min_annual_upside": 0.0,
+	"min_downside": 0.0,
+	"min_delta" : 0.35,
+	"max_delta" : 0.80
+}
