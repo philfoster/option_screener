@@ -13,6 +13,9 @@
 	This code requires the excellent pyetrade API from Jesse Cooper
 	https://github.com/jessecooper/pyetrade
 
+	Additionally, this module requires an active E*Trade account and an
+	API key (available from E*Trade customer service)
+
 # scripts
 	bin/get_quote.py  -- Get a real time quote for a symbol
 		$ bin/get_quote.py -h
