@@ -19,6 +19,14 @@
 			"expiration_days" : 3
 		},
 		{
+			"question": "Is the beta low enough?",
+			"type": "beta_filter",
+			"uuid": "c6b74b2e-6966-48a5-932d-419f51d384e7",
+			"beta_max": 2.0,
+			"blocker" : true,
+			"expiration_days" : 3
+		},
+		{
 			"question": "Is there enough open interest in the next option period?",
 			"type": "open_interest_filter",
 			"uuid": "93592be4-9b40-4cbf-910a-780713ba6714",

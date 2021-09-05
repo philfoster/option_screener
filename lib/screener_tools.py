@@ -16,6 +16,7 @@ DEFAULT_CACHE_DIR=".answers"
 DEFAULT_PRICE_MIN=15.0
 DEFAULT_PRICE_MAX=375.0
 DEFAULT_VOLUME_MIN=400000
+DEFAULT_BETA_MAX=2.0
 DEFAULT_OPEN_INTEREST_MIN=50
 DEFAULT_SECTOR_FILE="~/.stock_sectors.json"
 
@@ -30,6 +31,7 @@ QUESTION_EXPIRATION_DAYS="expiration_days"
 PRICE_MIN="price_min"
 PRICE_MAX="price_max"
 VOLUME_MIN="volume_min"
+BETA_MAX="beta_max"
 SECTOR_FILE="sector_file"
 OPEN_INTEREST_MIN="open_interest_min"
 
@@ -46,6 +48,7 @@ TYPE_SECTOR="sector_selection"
 TYPE_PRICE="price_filter"
 TYPE_VOLUME="volume_filter"
 TYPE_OPEN_INTEREST="open_interest_filter"
+TYPE_BETA="beta_filter"
 
 def get_sector_from_cache(screener_config,symbol):
     answer_file = get_answer_file(screener_config.get(CACHE_DIR),symbol)

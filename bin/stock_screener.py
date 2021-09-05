@@ -233,6 +233,28 @@ def check_volume(screener_config,answer_file,symbol,section,question):
     debug(f"{symbol} volume {avg_vol} is high enough {VOLUME_MIN}({volume_min})")
     return(True,get_current_timestamp() + (86400 * question.get(QUESTION_EXPIRATION_DAYS,0)))
 
+def check_beta(screener_config,answer_file,symbol,section,question):
+    # Get the boolean from cache and return it
+    (value,expiration_timestamp) = get_answer_from_cache(answer_file,symbol,question)
+    if value:
+        return (value,expiration_timestamp)
+
+    try: 
+        quote = stock_quote(screener_config, symbol)
+    except SymbolNotFoundError as e:
+        print(f"\t\t{symbol} does not exist")
+        return (False,datetime.datetime(2037,12,31).timestamp())
+    
+    beta = quote.get_beta()
+    beta_max = question.get(BETA_MAX,DEFAULT_BETA_MAX)
+
+    # Volume must be greater than the minimum
+    if beta > beta_max:
+        print(f"\t\t{symbol} beta {beta} is higher than {BETA_MAX}({beta_max})")
+        return(False,get_current_timestamp() + (86400 * question.get(QUESTION_EXPIRATION_DAYS,0)))
+    debug(f"{symbol} beta {beta} is low enough {BETA_MAX}({beta_max})")
+    return(True,get_current_timestamp() + (86400 * question.get(QUESTION_EXPIRATION_DAYS,0)))
+
 def check_open_interest(screener_config,answer_file,symbol,section,question):
     # Get the boolean from cache and return it
     (value,expiration_timestamp) = get_answer_from_cache(answer_file,symbol,question)
@@ -310,6 +332,8 @@ def ask_question(screener_config,answer_file,symbol,section,question):
         return check_price(screener_config,answer_file,symbol,section,question)
     elif question_type == TYPE_VOLUME:
         return check_volume(screener_config,answer_file,symbol,section,question)
+    elif question_type == TYPE_BETA:
+        return check_beta(screener_config,answer_file,symbol,section,question)
     elif question_type == TYPE_EARNINGS:
         return ask_question_earnings(answer_file,symbol,section,question)
     elif question_type == TYPE_SECTOR:
