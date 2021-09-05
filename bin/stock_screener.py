@@ -3,7 +3,6 @@
 import argparse
 import datetime
 import os
-import glob
 import json
 import re
 import sys
@@ -322,9 +321,6 @@ def ask_question(screener_config,answer_file,symbol,section,question):
         print(f"\t{symbol}[{section}] Unkown questions type {question_type}({text})")
     
     return (None,0)
-
-def get_current_timestamp():
-    return int(datetime.datetime.now().timestamp())
 
 def ask_question_boolean(answer_file,symbol,section,question):
     # Get the boolean from cache and return it

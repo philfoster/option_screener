@@ -1,3 +1,4 @@
+import glob
 import json
 import os
 from os.path import expanduser
@@ -87,7 +88,6 @@ def get_answer_from_cache(answer_file,symbol,question):
         expiration_timestamp = answers[question_id].get(CACHE_EXPIRATION_TIMESTAMP,None)
 
         if get_current_timestamp() < answers[question_id].get(CACHE_EXPIRATION_TIMESTAMP,0):
-            debug(f"got fresh answer '{value}' from cache for '{text}'")
             return (value,expiration_timestamp)
 
     # Didn't find a fresh answer
@@ -123,4 +123,7 @@ def get_symbols(symbols_dir):
                 for token in line.rstrip().split():
                     symbols.add(token)
     return symbols
+
+def get_current_timestamp():
+    return int(datetime.datetime.now().timestamp())
 
