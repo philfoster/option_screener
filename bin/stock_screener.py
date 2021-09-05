@@ -2,9 +2,11 @@
 
 import argparse
 import datetime
+import os
 import glob
 import json
 import re
+import sys
 from etrade_tools import *
 
 DEFAULT_SCREENER_CONFIG_FILE="stock_screener.json"
@@ -55,22 +57,32 @@ TYPE_PRICE="price_filter"
 TYPE_VOLUME="volume_filter"
 TYPE_OPEN_INTEREST="open_interest_filter"
 
-def main(screener_config_file,summary_quote):
+def main(screener_config_file,summary_quote,output_file):
+    if output_file:
+        if os.path.exists(output_file):
+            print(f"error: output file '{output_file}' exists")
+            sys.exit(1)
+
     screener_config = read_json_file(screener_config_file)
     symbols = get_symbols(screener_config.get(SYMBOLS_DIR))
     questions = get_questions(screener_config.get(QUESTIONS_DIR))
 
     passing = dict()
+    symbol_count = 0
     for symbol in sorted(symbols):
+        symbol_count+=1
+        print(f"\n\t*** {symbol}")
         (passed,score) = screen_symbol(screener_config,symbol,questions)
         if passed:
+            print(f"\t\t{symbol} passed")
             passing[symbol] = score
 
     if len(passing) == 0:
         print(f"\nno valid symbols found")
     else:
-        print("\nValid Symbols")
+        print(f"\nValid Symbols ({len(passing)}/{symbol_count})")
         print("-------------")
+
     for symbol in passing.keys():
         score = passing.get(symbol)
         
@@ -79,6 +91,61 @@ def main(screener_config_file,summary_quote):
             print(f"\t{symbol:5s} (score={score:-6.2f}%, price=${quote.get_price():7.2f})")
         else:
             print(f"\t{symbol:5s} (score={score:-6.2f})%")
+
+    if output_file:
+        try:
+            with open(output_file,"w") as of:
+                if summary_quote:
+                    of.write(f"Symbol,Score,Price\n")
+                else:
+                    of.write(f"Symbol,Score\n")
+                for symbol in passing.keys():
+                    score = passing.get(symbol)
+                    
+                    if summary_quote:
+                        quote = stock_quote(screener_config.get(ETRADE_CONFIG), symbol)
+                        of.write(f"{symbol},{score:.2f},${quote.get_price():.2f}\n")
+                    else:
+                        of.write(f"{symbol},{score:.2f}\n")
+        except OSError as e:
+            print(f"error, could not open '{output_file}' for writing: {e}")
+
+def fresh_screen(screener_config_file,symbol):
+    print(f"\n\t*** {symbol}")
+    screener_config = read_json_file(screener_config_file)
+    answer_file = get_answer_file(screener_config.get(CACHE_DIR),symbol)
+    questions = get_questions(screener_config.get(QUESTIONS_DIR))
+
+    # Delete the cache data for the symbol
+    if os.path.exists(expanduser(answer_file)):
+        os.remove(expanduser(answer_file))
+
+    (passed,score) = screen_symbol(screener_config,symbol,questions)
+    if passed:
+        print(f"\t{symbol:5s} (score={score:-6.2f})%")
+    else:
+        print(f"\t{symbol} failed screening")
+
+def review_symbol(screener_config_file,symbol):
+    print(f"Reviewing: {symbol}")
+    screener_config = read_json_file(screener_config_file)
+    answer_file = get_answer_file(screener_config.get(CACHE_DIR),symbol)
+    if not os.path.exists(expanduser(answer_file)):
+        print(f"no data found for {symbol}")
+
+    answers = get_all_answers_from_cache(answer_file)
+    for key in answers:
+        answer = answers.get(key)
+        if isinstance(answer,dict):
+            value = answer.get(CACHE_VALUE)   
+            timestamp = answer.get(CACHE_EXPIRATION_TIMESTAMP)   
+            question = answer.get(CACHE_QUESTION)   
+            date = datetime.datetime.fromtimestamp(timestamp)
+            now = datetime.datetime.now()
+            date_string = f"{date.year}-{date.month:02d}-{date.day:02d}"
+            if now > date:
+                date_string = "expired"
+            print(f"  {question} {str(value):5s}({date_string:10s})")
 
 def stock_quote(etrade_config,symbol):
     quote = GLOBAL_QUOTE_CACHE.get(symbol,None)
@@ -94,7 +161,7 @@ def stock_quote(etrade_config,symbol):
 def screen_symbol(screener_config,symbol,questions):
 
     if fresh_blocker_screen(screener_config,symbol,questions) is False:
-        debug(f"{symbol} failed fresh blocker screen")
+        print(f"\t\t{symbol} failed fresh blocker screen")
         return (False,0.0)
 
     answer_file = get_answer_file(screener_config.get(CACHE_DIR),symbol)
@@ -148,7 +215,7 @@ def fresh_blocker_screen(screener_config,symbol,questions):
                 if get_current_timestamp() < answers[question_id].get(CACHE_EXPIRATION_TIMESTAMP,0):
                     value = answers[question_id].get(CACHE_VALUE)
                     if value is False:
-                        debug(f"'{question.get(QUESTION_TEXT)}' is a blocker and is false, failing screen")
+                        print(f"\t\t'{question.get(QUESTION_TEXT)}' is a blocker and is false, failing screen")
                         return False
 
     return True
@@ -177,7 +244,7 @@ def check_price(screener_config,answer_file,symbol,section,question):
     try: 
         quote = stock_quote(screener_config.get(ETRADE_CONFIG), symbol)
     except SymbolNotFoundError as e:
-        debug(f"{symbol} does not exist")
+        print(f"\t\t{symbol} does not exist")
         return (False,datetime.datetime(2037,12,31).timestamp())
     
     price = quote.get_price()
@@ -189,14 +256,14 @@ def check_price(screener_config,answer_file,symbol,section,question):
     if price >= price_min:
         debug(f"{symbol} price ${price:.2f} is higher than {PRICE_MIN}(${price_min:.2f})")
     else:
-        debug(f"{symbol} price ${price:.2f} is too low")
+        print(f"\t\t{symbol} price ${price:.2f} is too low")
         return(False,get_current_timestamp() + (86400 * question.get(QUESTION_EXPIRATION_DAYS,0)))
 
     # Price is less than or equal to price_max
     if price <= price_max:
         debug(f"{symbol} price ${price:.2f} is lower than {PRICE_MAX}(${price_max:.2f})")
     else:
-        debug(f"{symbol} price ${price:.2f} is too high")
+        print(f"\t\t{symbol} price ${price:.2f} is too high")
         return(False,get_current_timestamp() + (86400 * question.get(QUESTION_EXPIRATION_DAYS,0)))
     debug(f"check price for {symbol} passed")
     return(True,get_current_timestamp() + (86400 * question.get(QUESTION_EXPIRATION_DAYS,0)))
@@ -210,7 +277,7 @@ def check_volume(screener_config,answer_file,symbol,section,question):
     try: 
         quote = stock_quote(screener_config.get(ETRADE_CONFIG), symbol)
     except SymbolNotFoundError as e:
-        debug(f"{symbol} does not exist")
+        print(f"\t\t{symbol} does not exist")
         return (False,datetime.datetime(2037,12,31).timestamp())
     
     avg_vol = quote.get_average_volume()
@@ -218,7 +285,7 @@ def check_volume(screener_config,answer_file,symbol,section,question):
 
     # Volume must be greater than the minimum
     if avg_vol < volume_min:
-        debug(f"{symbol} volume {avg_vol} is lower than {VOLUME_MIN}({volume_min})")
+        print(f"\t\t{symbol} volume {avg_vol} is lower than {VOLUME_MIN}({volume_min})")
         return(False,get_current_timestamp() + (86400 * question.get(QUESTION_EXPIRATION_DAYS,0)))
     debug(f"{symbol} volume {avg_vol} is high enough {VOLUME_MIN}({volume_min})")
     return(True,get_current_timestamp() + (86400 * question.get(QUESTION_EXPIRATION_DAYS,0)))
@@ -235,7 +302,7 @@ def check_open_interest(screener_config,answer_file,symbol,section,question):
         debug(f"fetching options chain for {symbol} {next_date}")
         option_chain = get_option_chain(screener_config.get(ETRADE_CONFIG), symbol, next_monthly)
     except Exception as e:
-        debug(f"error fetching options chain: {e}")
+        print(f"\t\terror fetching options chain: {e}")
         return (False,0)
     
     open_interest_min = question.get(OPEN_INTEREST_MIN,DEFAULT_OPEN_INTEREST_MIN)
@@ -248,7 +315,7 @@ def check_open_interest(screener_config,answer_file,symbol,section,question):
             return(True,next_monthly.timestamp())
 
     # Didn't find sufficient open interest
-    debug(f"did not find sufficient open interest for {symbol} on {next_date}")
+    print(f"\t\tdid not find sufficient open interest for {symbol} on {next_date}")
     return(False,next_monthly.timestamp())
 
 def debug(message):
@@ -365,7 +432,7 @@ def ask_question_earnings(answer_file,symbol,section,question):
 
             earnings_date = datetime.datetime(year,month,day,0,00,1)
             if earnings_date < next_monthly:
-                debug(f"earnings date {earnings_date} is before next_monthly={next_monthly}")
+                print(f"earnings date {earnings_date} is before next_monthly={next_monthly}")
                 return (False,int(earnings_date.timestamp() + (86400*3)))
             else:
                 debug(f"earnings date {earnings_date} is after next_monthly={next_monthly}")
@@ -399,8 +466,16 @@ if __name__ == "__main__":
     parser.add_argument('-c','--config-file', dest='config_file', help="etrade configuration file", default=DEFAULT_SCREENER_CONFIG_FILE)
     parser.add_argument('-v','--verbose', dest='verbose', required=False,default=False,action='store_true',help="Increase verbosity")
     parser.add_argument('-q','--quote', dest='summary_quote', required=False,default=False,action='store_true',help="Include a quote in the summary")
+    parser.add_argument('-o','--output', dest='output_file', required=False,default=None,help="Write the results to a file")
+    parser.add_argument('-r','--review', dest='review_symbol', required=False,default=None,help="Review a symbol's cached data")
+    parser.add_argument('-s','--symbol', dest='symbol', required=False,default=None,help="Perform fresh screen of a symbol")
     args = parser.parse_args()
     GLOBAL_VERBOSE = args.verbose
     GLOBAL_QUOTE_CACHE = dict()
-    main(args.config_file,args.summary_quote)
+    if args.review_symbol:
+        review_symbol(args.config_file,args.review_symbol)
+    elif args.symbol:
+        fresh_screen(args.config_file,args.symbol)
+    else:
+        main(args.config_file,args.summary_quote,args.output_file)
 
