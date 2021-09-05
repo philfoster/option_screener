@@ -73,15 +73,23 @@
 	bin/stock_screener.py  -- Loop across symbols in a directory of watch lists, filter the results based
 							 on a number of configurable questions. The question has an expiration time
 							 to prevent asking the same question with the cached answer is still fresh.
-		$ bin/stock_screener.py --help
-		usage: stock_screener.py [-h] [-c CONFIG_FILE] [-v] [-q]
+		usage: stock_screener.py [-h] [-c CONFIG_FILE] [-v] [-q] [-o OUTPUT_FILE]
+								 [-r REVIEW_SYMBOL] [-s SYMBOL]
 
+		$ bin/stock_screener.py --help
 		optional arguments:
 		  -h, --help            show this help message and exit
 		  -c CONFIG_FILE, --config-file CONFIG_FILE
 								etrade configuration file
 		  -v, --verbose         Increase verbosity
 		  -q, --quote           Include a quote in the summary
+		  -o OUTPUT_FILE, --output OUTPUT_FILE
+								Write the results to a file
+		  -r REVIEW_SYMBOL, --review REVIEW_SYMBOL
+								Review a symbol's cached data
+		  -s SYMBOL, --symbol SYMBOL
+								Perform fresh screen of a symbol
+		usage: stock_screener.py [-h] [-c CONFIG_FILE] [-v] [-q]
 
 		$ bin/stock_screener.py
 		bin/stock_screener.py
