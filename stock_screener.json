@@ -2,5 +2,6 @@
 	"cache_dir": "~/.stock_screener",
 	"etrade_config": "etrade.json",
 	"symbols_directory": "./symbols",
-	"questions_directory": "./questions"
+	"questions_directory": "./questions",
+	"sector_question_id": "d74b4407-243a-41ee-9639-5a6fbb20aa98"
 }
