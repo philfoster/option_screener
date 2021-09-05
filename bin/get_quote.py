@@ -1,15 +1,11 @@
 #! /usr/bin/python3
 
 import argparse
-import os
 from etrade_tools import *
+from stock_screener import get_sector
 
 DEFAULT_CONFIG_FILE="etrade.json"
 DEFAULT_SCREENER_CONFIG_FILE="stock_screener.json"
-
-CACHE_DIR="cache_dir"
-CACHE_VALUE="value"
-SECTOR_QUESTION_ID="sector_question_id"
 
 def main(config_file,screener_config_file,symbol,verbose):
     # Get a Market object
@@ -30,36 +26,9 @@ def main(config_file,screener_config_file,symbol,verbose):
         print(f"\t52 Week Low  : ${quote.get_52week_low():.2f} ({quote.get_52week_low_date()})")
         print(f"\tMarketCap    : ${quote.get_market_cap()}")
         print(f"\tFloat        : {quote.get_float()} shares")
+        print(f"\tBeta         : {quote.get_beta()}")
     else:
         print(f"{symbol}: ${quote.get_price():.2f} / ${quote.get_change_close():.2f} ({quote.get_change_close_prct():.2f}%)")
-
-def get_sector(screener_config_file,symbol):
-    screener_config = read_json_file(screener_config_file)
-
-    answer_file = get_answer_file(screener_config.get(CACHE_DIR),symbol)
-    if not os.path.exists(expanduser(answer_file)):
-        return None
-
-    sector_question_id = screener_config.get(SECTOR_QUESTION_ID,None)
-    if sector_question_id is None:
-        return None
-
-    answers = get_all_answers_from_cache(answer_file)
-    answer = answers.get(sector_question_id,None)
-    if answer:
-        return answer.get(CACHE_VALUE,None)
-    return None
-
-def get_all_answers_from_cache(cache_file):
-    answers = dict()
-    try:
-        answers = read_json_file(cache_file)
-    except Exception as e:
-        pass
-    return answers
-
-def get_answer_file(cache_dir,symbol):
-    return f"{cache_dir}/{symbol.upper()}.json"
 
 if __name__ == "__main__":
     # Setup the argument parsing

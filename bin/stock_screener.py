@@ -10,6 +10,7 @@ import sys
 from etrade_tools import *
 
 DEFAULT_SCREENER_CONFIG_FILE="stock_screener.json"
+SECTOR_QUESTION_ID="sector_question_id"
 
 # Globals
 global GLOBAL_VERBOSE
@@ -157,6 +158,23 @@ def stock_quote(etrade_config,symbol):
     quote = get_quote(etrade_config, symbol)
     GLOBAL_QUOTE_CACHE[symbol] = quote
     return quote
+
+def get_sector(screener_config_file,symbol):
+    screener_config = read_json_file(screener_config_file)
+
+    answer_file = get_answer_file(screener_config.get(CACHE_DIR),symbol)
+    if not os.path.exists(expanduser(answer_file)):
+        return None
+
+    sector_question_id = screener_config.get(SECTOR_QUESTION_ID,None)
+    if sector_question_id is None:
+        return None
+
+    answers = get_all_answers_from_cache(answer_file)
+    answer = answers.get(sector_question_id,None)
+    if answer:
+        return answer.get(CACHE_VALUE,None)
+    return None
 
 def screen_symbol(screener_config,symbol,questions):
 
