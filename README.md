@@ -9,7 +9,7 @@
 	browser, where you authenticate and are given a code. Paste the code
 	at the prompt to cache the auth token.
 
-	This project is heavily inspired by Alan Elman (The Blue Collar Investor)
+	This project is heavily inspired by Alan Ellman (The Blue Collar Investor)
 	To understand the goals laid out here, watch his youtube videos on 
 	'Beginner's Corner for Covered Call Writing' or visit his website at
 	https://www.thebluecollarinvestor.com
