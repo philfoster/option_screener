@@ -2,15 +2,16 @@
 
 import argparse
 from etrade_tools import *
-from stock_screener import get_sector
 
 DEFAULT_CONFIG_FILE="etrade.json"
 DEFAULT_SCREENER_CONFIG_FILE="stock_screener.json"
 
 def main(config_file,screener_config_file,symbol,verbose):
     # Get a Market object
-    quote = get_quote(config_file, symbol)
-    sector = get_sector(screener_config_file,symbol)
+    
+    screener_config = read_json_file(screener_config_file)
+    quote = get_quote(config_file, symbol, screener_config=screener_config)
+    sector = quote.get_sector()
     if verbose:
         if sector:
             print(f"{symbol} ({quote.get_company_name()}/{sector})")

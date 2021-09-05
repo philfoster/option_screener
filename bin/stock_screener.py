@@ -10,53 +10,10 @@ import sys
 from etrade_tools import *
 
 DEFAULT_SCREENER_CONFIG_FILE="stock_screener.json"
-SECTOR_QUESTION_ID="sector_question_id"
 
 # Globals
 global GLOBAL_VERBOSE
 global GLOBAL_QUOTE_CACHE
-
-# Screener config items
-CACHE_DIR="cache_dir"
-ETRADE_CONFIG="etrade_config"
-QUESTIONS_DIR="questions_directory"
-SYMBOLS_DIR="symbols_directory"
-
-# Defaults
-DEFAULT_CACHE_DIR=".answers"
-DEFAULT_PRICE_MIN=15.0
-DEFAULT_PRICE_MAX=375.0
-DEFAULT_VOLUME_MIN=400000
-DEFAULT_OPEN_INTEREST_MIN=50
-DEFAULT_SECTOR_FILE="~/.stock_sectors.json"
-
-# Question configuration
-QUESTION_NAME="name"
-QUESTION_LIST="questions"
-QUESTION_TEXT="question"
-QUESTION_TYPE="type"
-QUESTION_ID="uuid"
-QUESTION_BLOCKER="blocker"
-QUESTION_EXPIRATION_DAYS="expiration_days"
-PRICE_MIN="price_min"
-PRICE_MAX="price_max"
-VOLUME_MIN="volume_min"
-SECTOR_FILE="sector_file"
-OPEN_INTEREST_MIN="open_interest_min"
-
-# Cache constants
-CACHE_SYMBOL="symbol"
-CACHE_VALUE="value"
-CACHE_EXPIRATION_TIMESTAMP="expiration_timestamp"
-CACHE_QUESTION="question"
-
-# Quetion types
-TYPE_BOOLEAN="boolean"
-TYPE_EARNINGS="earnings_date"
-TYPE_SECTOR="sector_selection"
-TYPE_PRICE="price_filter"
-TYPE_VOLUME="volume_filter"
-TYPE_OPEN_INTEREST="open_interest_filter"
 
 def main(screener_config_file,summary_quote,output_file):
     if output_file:
@@ -88,7 +45,7 @@ def main(screener_config_file,summary_quote,output_file):
         score = passing.get(symbol)
         
         if summary_quote:
-            quote = stock_quote(screener_config.get(ETRADE_CONFIG), symbol)
+            quote = stock_quote(screener_config, symbol)
             print(f"\t{symbol:5s} (score={score:-6.2f}%, price=${quote.get_price():7.2f})")
         else:
             print(f"\t{symbol:5s} (score={score:-6.2f})%")
@@ -104,7 +61,7 @@ def main(screener_config_file,summary_quote,output_file):
                     score = passing.get(symbol)
                     
                     if summary_quote:
-                        quote = stock_quote(screener_config.get(ETRADE_CONFIG), symbol)
+                        quote = stock_quote(screener_config, symbol)
                         of.write(f"{symbol},{score:.2f},${quote.get_price():.2f}\n")
                     else:
                         of.write(f"{symbol},{score:.2f}\n")
@@ -148,33 +105,17 @@ def review_symbol(screener_config_file,symbol):
                 date_string = "expired"
             print(f"  {question} {str(value):5s}({date_string:10s})")
 
-def stock_quote(etrade_config,symbol):
+def stock_quote(screener_config,symbol):
+    etrade_config = screener_config.get(ETRADE_CONFIG)
     quote = GLOBAL_QUOTE_CACHE.get(symbol,None)
     if quote:
         debug(f"returning cached quote for {symbol}")
         return quote
     
     debug(f"getting quote for {symbol}")
-    quote = get_quote(etrade_config, symbol)
+    quote = get_quote(etrade_config, symbol, screener_config=screener_config)
     GLOBAL_QUOTE_CACHE[symbol] = quote
     return quote
-
-def get_sector(screener_config_file,symbol):
-    screener_config = read_json_file(screener_config_file)
-
-    answer_file = get_answer_file(screener_config.get(CACHE_DIR),symbol)
-    if not os.path.exists(expanduser(answer_file)):
-        return None
-
-    sector_question_id = screener_config.get(SECTOR_QUESTION_ID,None)
-    if sector_question_id is None:
-        return None
-
-    answers = get_all_answers_from_cache(answer_file)
-    answer = answers.get(sector_question_id,None)
-    if answer:
-        return answer.get(CACHE_VALUE,None)
-    return None
 
 def screen_symbol(screener_config,symbol,questions):
 
@@ -238,21 +179,6 @@ def fresh_blocker_screen(screener_config,symbol,questions):
 
     return True
 
-def cache_answers(answer_file,answers):
-    debug(f"caching answers to {answer_file}")
-    write_json_file(answer_file,answers)
-
-def get_answer_file(cache_dir,symbol):
-    return f"{cache_dir}/{symbol.upper()}.json"
-
-def get_all_answers_from_cache(cache_file):
-    answers = dict()
-    try:
-        answers = read_json_file(cache_file)
-    except Exception as e:
-        pass
-    return answers
-
 def check_price(screener_config,answer_file,symbol,section,question):
     # Get the boolean from cache and return it
     (value,expiration_timestamp) = get_answer_from_cache(answer_file,symbol,question)
@@ -260,7 +186,7 @@ def check_price(screener_config,answer_file,symbol,section,question):
         return (value,expiration_timestamp)
 
     try: 
-        quote = stock_quote(screener_config.get(ETRADE_CONFIG), symbol)
+        quote = stock_quote(screener_config, symbol)
     except SymbolNotFoundError as e:
         print(f"\t\t{symbol} does not exist")
         return (False,datetime.datetime(2037,12,31).timestamp())
@@ -293,7 +219,7 @@ def check_volume(screener_config,answer_file,symbol,section,question):
         return (value,expiration_timestamp)
 
     try: 
-        quote = stock_quote(screener_config.get(ETRADE_CONFIG), symbol)
+        quote = stock_quote(screener_config, symbol)
     except SymbolNotFoundError as e:
         print(f"\t\t{symbol} does not exist")
         return (False,datetime.datetime(2037,12,31).timestamp())
@@ -339,24 +265,6 @@ def check_open_interest(screener_config,answer_file,symbol,section,question):
 def debug(message):
     if GLOBAL_VERBOSE:
         print(message)
-
-def get_answer_from_cache(answer_file,symbol,question):
-    question_id = question.get(QUESTION_ID)
-    text = question.get(QUESTION_TEXT)
-
-    answers = get_all_answers_from_cache(answer_file)
-
-    # Create the question if needed
-    if question_id in answers.keys():
-        value = answers[question_id].get(CACHE_VALUE,None)
-        expiration_timestamp = answers[question_id].get(CACHE_EXPIRATION_TIMESTAMP,None)
-
-        if get_current_timestamp() < answers[question_id].get(CACHE_EXPIRATION_TIMESTAMP,0):
-            debug(f"got fresh answer '{value}' from cache for '{text}'")
-            return (value,expiration_timestamp)
-
-    # Didn't find a fresh answer
-    return (None,0)
 
 def ask_question_sector(answer_file,symbol,section,question):
     (value,expiration_timestamp) = get_answer_from_cache(answer_file,symbol,question)
@@ -457,26 +365,6 @@ def ask_question_earnings(answer_file,symbol,section,question):
                 return (True,int(earnings_date.timestamp() + (86400*3)))
         else:
             print("\n*** format error, try again MMMM-YY-DD***")
-
-def get_questions(questions_dir):
-    questions = dict()
-    for file in glob.glob(f"{questions_dir}/*.json"):
-        try:
-            question_data = read_json_file(file)
-            qname = question_data.get(QUESTION_NAME)
-            questions[qname] = question_data
-        except Exception as e:
-            print(f"Could not read {file}: {e}")
-    return questions
-
-def get_symbols(symbols_dir):
-    symbols = set()
-    for file in glob.glob(f"{symbols_dir}/*"):
-        with open(file,"r") as f:
-            for line in f.readlines():
-                for token in line.rstrip().split():
-                    symbols.add(token)
-    return symbols
 
 if __name__ == "__main__":
     # Setup the argument parsing

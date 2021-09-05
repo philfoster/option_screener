@@ -3,6 +3,7 @@ import json
 import time
 import datetime
 from os.path import expanduser
+from screener_tools import *
 
 PROPERTIES_CREDENTIALS_FILE="credentials"
 PROPERTIES_AUTHTOKEN_FILE="authtoken"
@@ -36,14 +37,14 @@ def authenticate (consumer_key,consumer_secret):
     verifier_code = input("Enter verification code: ")
     return oauth.get_access_token(verifier_code)
 
-def get_quote(config_file, symbol):
+def get_quote(config_file, symbol, screener_config=None):
     """ Returns a quote for the symbol as a float """
     quote_data = get_quote_data(config_file, symbol)
 
     if quote_data.get("QuoteResponse").get("QuoteData") is None:
         raise SymbolNotFoundError(f"symbol {symbol} is not found")
 
-    return Quote(quote_data)
+    return Quote(quote_data,screener_config)
 
 def get_quote_data(config_file, symbol):
     """ takes in an etrade json config file and a symbol, returns the quote data as a json object """
@@ -84,14 +85,6 @@ def get_third_friday(year,month):
     else:
         return datetime.datetime(first.year,first.month,26-first.weekday(),23,59,59)
     
-
-def read_json_file(json_file):
-    """ Read in a json file and return a json data structure """
-    json_data = None
-    with open(expanduser(json_file), "r") as cf:
-        json_data = json.loads("".join(cf.readlines()))
-    return json_data
-
 def renew_authtoken(config_file,force_renew):
     (creds_file, authtoken_file) = _get_etrade_config(config_file)
     authtoken_data = _get_authtoken_data(config_file)
@@ -198,10 +191,6 @@ def _read_authtoken_file(authtoken_file):
 
     return authtoken_data
 
-def write_json_file(filename,data):
-    with open(expanduser(filename), "w") as f:
-        f.write(json.dumps(data,indent=2))
-
 def _write_authtoken_file(authtoken_file,token_data):
     write_json_file(authtoken_file,token_data)
 
@@ -245,9 +234,10 @@ def _get_authtoken(config_file):
     return authtoken_data
 
 class Quote():
-    def __init__(self,quote_data):
+    def __init__(self,quote_data,screener_config=None):
         self._quote_data = quote_data
 
+        self._symbol = self._quote_data.get("QuoteResponse").get("QuoteData")[0].get("Product").get("symbol")
         self._price = float(self._quote_data.get("QuoteResponse").get("QuoteData")[0].get("All").get("lastTrade"))
         self._bid = float(self._quote_data.get("QuoteResponse").get("QuoteData")[0].get("All").get("bid"))
         self._ask = float(self._quote_data.get("QuoteResponse").get("QuoteData")[0].get("All").get("ask"))
@@ -274,6 +264,14 @@ class Quote():
 
         # TODO - yield, dividend, ex-date, div pay date(epoch seconds), p/e ratio, eps, estEarning, 
         # TODO - after hours data (price, bid, ask, volume, change%)
+        if screener_config:
+            self._sector = get_sector_from_cache(screener_config,self._symbol)
+
+    def get_symbol(self):
+        return self._symbol
+
+    def get_sector(self):
+        return self._sector
 
     def get_price(self):
         return self._price
