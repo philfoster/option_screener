@@ -130,6 +130,18 @@
 				ABT   (score=100.00)%
 				...
 
+	bin/ata.py  -- Automated Technical Analysis, analyzes price trend data and 
+				   updates the cache for the stock screner
+		$ bin/ata.py --help
+		usage: ata.py [-h] [-c CONFIG_FILE] [-v] [-s SYMBOL]
+
+		optional arguments:
+		  -h, --help            show this help message and exit
+		  -c CONFIG_FILE, --config-file CONFIG_FILE
+								screener configuration file
+		  -v, --verbose         Increase verbosity
+		  -s SYMBOL, --symbol SYMBOL
+								Analyze a symbol
 # Configuration
 	etrade.json - this is the base configuration file that points to other configs
 		Example:
