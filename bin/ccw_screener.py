@@ -5,6 +5,7 @@ import datetime
 from etrade_tools import *
 
 DEFAULT_CONFIG_FILE="etrade.json"
+DEFAULT_TONE_FILE="tone/market-neutral.json"
 
 DEFAULT_MIN_OPEN_INTEREST=25
 DEFAULT_MIN_ANNUAL_ROO=0.0
@@ -166,7 +167,7 @@ if __name__ == "__main__":
     parser.add_argument('-e','--expiration', dest='expiration', required=False,default=None,help="Expiration Date <YYYY-MM-DD>" )
     parser.add_argument('-d','--debug', dest='debug', required=False,default=False,action='store_true',help="Enable debugging" )
     parser.add_argument('-v','--verbose', dest='verbose', required=False,default=False,action='store_true',help="Increase verbosity")
-    parser.add_argument('-m','--market-tone', dest='market_tone', required=True,help="Market tone configuration" )
+    parser.add_argument('-m','--market-tone', dest='market_tone',default=DEFAULT_TONE_FILE,help="Market tone configuration" )
 
     expiration = None
     args = parser.parse_args()
