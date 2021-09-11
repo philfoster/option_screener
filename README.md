@@ -132,6 +132,7 @@
 
 	bin/ata.py  -- Automated Technical Analysis, analyzes price trend data and 
 				   updates the cache for the stock screner
+					Requires: pandas, yfinance
 		$ bin/ata.py --help
 		usage: ata.py [-h] [-c CONFIG_FILE] [-v] [-s SYMBOL]
 
