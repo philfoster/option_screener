@@ -51,7 +51,7 @@
 			"expiration_days" : 3
 		},
 		{
-			"question": "Is the volume greater than than moving average? ",
+			"question": "Is the volume greater than the moving average? ",
 			"type": "boolean",
 			"uuid": "9f407e44-e809-498f-942c-b688f19585d2",
 			"blocker" : false,
