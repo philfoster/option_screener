@@ -17,9 +17,16 @@ QUID_PRICE_ABOVE_20DAYEMA="153c0da1-461c-442c-ae7e-c0428823f3e7"
 QUID_20DAYEMA_TRENDING_UP="dd2bbe54-a68c-4cd0-ac3d-26038d622318"
 QUID_20DAYEMA_ABOVE_100DAYEMA="58735e6c-74f8-4c6b-8d73-6f7b7e942d71"
 QUID_100DAYEMA_TRENDING_UP="0ba7df53-0911-4af6-b18c-e31e17c264a5"
+QUID_VOLUME_HIGHER="9f407e44-e809-498f-942c-b688f19585d2"
+QUID_OBV_POSITIVE="e30cc0ba-5b6e-43bf-a3d0-29a0b621a34d"
+QUID_OBV_TRENDING_UP="87489c8b-4115-453d-8830-0324158d82d8"
 
 FRESHNESS_DAYS=2
 ONE_DAY = 24 * 60 * 60
+OBV_DAYS=-60
+
+COLUMN_VOLUME="Volume"
+COLUMN_CLOSE="Close"
 
 # Columns
 THREE_DAY_EMA="3dayEMA"
@@ -27,6 +34,9 @@ FIVE_DAY_EMA="5dayEMA"
 NINE_DAY_EMA="9dayEMA"
 TWENTY_DAY_EMA="20dayEMA"
 HUNDRED_DAY_EMA="100dayEMA"
+VOL_THREE_DAY="Vol3DayEMA"
+VOL_TWENTY_DAY="Vol20DayEMA"
+ON_BALANCE_VOLUME="OnBalanceVolume"
 
 # Globals
 global GLOBAL_VERBOSE
@@ -48,6 +58,9 @@ def analyze_symbol(screener_config,questions,symbol):
     (value,timestamp) = is_20dayEMA_uptrending(symbol,price_data,answers)
     (value,timestamp) = is_20dayEMA_above_100dayEMA(symbol,price_data,answers)
     (value,timestamp) = is_100dayEMA_uptrending(symbol,price_data,answers)
+    (value,timestamp) = is_volume_heavy_lately(symbol,price_data,answers)
+    (value,timestamp) = is_obv_positive(symbol,price_data,answers)
+    (value,timestamp) = is_obv_uptrending(symbol,price_data,answers)
 
     cache_answers(answer_file,answers)
 
@@ -57,11 +70,14 @@ def get_one_year_data(symbol):
     start_date = f"{now.year -1}-{now.month:02d}-{now.day:02d}"
     price_data = pdr.get_data_yahoo(symbol,start=start_date,end=end_date)
 
-    price_data[THREE_DAY_EMA] = price_data['Close'].ewm(span=3,adjust=False).mean()
-    price_data[FIVE_DAY_EMA] = price_data['Close'].ewm(span=5,adjust=False).mean()
-    price_data[NINE_DAY_EMA] = price_data['Close'].ewm(span=9,adjust=False).mean()
-    price_data[TWENTY_DAY_EMA] = price_data['Close'].ewm(span=20,adjust=False).mean()
-    price_data[HUNDRED_DAY_EMA] = price_data['Close'].ewm(span=100,adjust=False).mean()
+    price_data[THREE_DAY_EMA] = price_data[COLUMN_CLOSE].ewm(span=3,adjust=False).mean()
+    price_data[FIVE_DAY_EMA] = price_data[COLUMN_CLOSE].ewm(span=5,adjust=False).mean()
+    price_data[NINE_DAY_EMA] = price_data[COLUMN_CLOSE].ewm(span=9,adjust=False).mean()
+    price_data[TWENTY_DAY_EMA] = price_data[COLUMN_CLOSE].ewm(span=20,adjust=False).mean()
+    price_data[HUNDRED_DAY_EMA] = price_data[COLUMN_CLOSE].ewm(span=100,adjust=False).mean()
+
+    price_data[VOL_THREE_DAY] = price_data[COLUMN_VOLUME].ewm(span=3,adjust=False).mean()
+    price_data[VOL_TWENTY_DAY] = price_data[COLUMN_VOLUME].ewm(span=20,adjust=False).mean()
 
     return price_data
 
@@ -120,7 +136,7 @@ def is_price_above_20dayEMA(symbol,price_data,answers):
     debug(f"{symbol} didn't find fresh answer for price above 20dayEMA")
 
     try: 
-        price = get_last_value(price_data,'Close')
+        price = get_last_value(price_data,COLUMN_CLOSE)
         twenty_day_ema = get_last_value(price_data,TWENTY_DAY_EMA)
     except IndexError as e:
         print(f"{symbol} error: {e}")
@@ -237,6 +253,137 @@ def is_100dayEMA_uptrending(symbol,price_data,answers):
 
     debug(f"{symbol} ({value}) 100dayEMA {hundred_day_ema} > 100dayEMA(five days ago) {prev_hundred_day_ema}")
     return (value,expiration_time)
+
+def is_volume_heavy_lately(symbol,price_data,answers):
+    now = datetime.datetime.now()
+    expiration_time = int(now.timestamp() + (ONE_DAY * FRESHNESS_DAYS))
+    value = False
+
+    cached_answer = answers.get(QUID_VOLUME_HIGHER,None)
+    if cached_answer:
+        if is_fresh(cached_answer):
+            debug(f"{symbol} returning fresh answer for heavy volume")
+            return (cached_answer.get(CACHE_VALUE),cached_answer.get(CACHE_EXPIRATION_TIMESTAMP))
+
+    debug(f"{symbol} didn't find fresh answer for heavy volume")
+
+    try: 
+        vol_3day = get_last_value(price_data,VOL_THREE_DAY)
+        vol_20day = get_last_value(price_data,VOL_TWENTY_DAY)
+    except IndexError as e:
+        print(f"{symbol} error: {e}")
+        return (value,expiration_time)
+
+    if vol_3day > vol_20day:
+        value = True
+
+    if not QUID_VOLUME_HIGHER in answers.keys():
+        answers[QUID_VOLUME_HIGHER] = dict()
+        answers[QUID_VOLUME_HIGHER][CACHE_QUESTION] = "(automated) Is the volume greater than the average?"
+
+    answers[QUID_VOLUME_HIGHER][CACHE_VALUE] = value
+    answers[QUID_VOLUME_HIGHER][CACHE_EXPIRATION_TIMESTAMP] = expiration_time
+
+    debug(f"{symbol} ({value}) recenty volume {int(vol_3day)} > normal volume {int(vol_20day)}")
+    return (value,expiration_time)
+
+def is_obv_positive(symbol,price_data,answers):
+    now = datetime.datetime.now()
+    expiration_time = int(now.timestamp() + (ONE_DAY * FRESHNESS_DAYS))
+    value = False
+
+    cached_answer = answers.get(QUID_OBV_POSITIVE,None)
+    if cached_answer:
+        if is_fresh(cached_answer):
+            debug(f"{symbol} returning fresh answer for obv positive")
+            return (cached_answer.get(CACHE_VALUE),cached_answer.get(CACHE_EXPIRATION_TIMESTAMP))
+
+    debug(f"{symbol} didn't find fresh answer for obv positive")
+
+    try: 
+        obv_data = on_balance_volume(price_data)
+        current_obv = get_last_value(obv_data,ON_BALANCE_VOLUME)
+    except IndexError as e:
+        print(f"{symbol} error: {e}")
+        return (value,expiration_time)
+
+    if current_obv > 0:
+        value = True
+
+    if not QUID_OBV_POSITIVE in answers.keys():
+        answers[QUID_OBV_POSITIVE] = dict()
+        answers[QUID_OBV_POSITIVE][CACHE_QUESTION] = "(automated) Is the On Balance Volume positive?"
+
+    answers[QUID_OBV_POSITIVE][CACHE_VALUE] = value
+    answers[QUID_OBV_POSITIVE][CACHE_EXPIRATION_TIMESTAMP] = expiration_time
+
+    debug(f"{symbol} ({value}) on balance volume {current_obv} > 0")
+    return (value,expiration_time)
+
+def is_obv_uptrending(symbol,price_data,answers):
+    now = datetime.datetime.now()
+    expiration_time = int(now.timestamp() + (ONE_DAY * FRESHNESS_DAYS))
+    value = False
+
+    cached_answer = answers.get(QUID_OBV_TRENDING_UP,None)
+    if cached_answer:
+        if is_fresh(cached_answer):
+            debug(f"{symbol} returning fresh answer for obv trending up")
+            return (cached_answer.get(CACHE_VALUE),cached_answer.get(CACHE_EXPIRATION_TIMESTAMP))
+
+    debug(f"{symbol} didn't find fresh answer for obv trending up")
+
+    try: 
+        obv_data = on_balance_volume(price_data)
+        obv_data[THREE_DAY_EMA] = obv_data[ON_BALANCE_VOLUME].ewm(span=3,adjust=False).mean()
+        obv_data[NINE_DAY_EMA] = obv_data[ON_BALANCE_VOLUME].ewm(span=9,adjust=False).mean()
+
+        three_day_ema = get_last_value(obv_data,THREE_DAY_EMA)
+        nine_day_ema = get_last_value(obv_data,NINE_DAY_EMA)
+        
+    except IndexError as e:
+        print(f"{symbol} error: {e}")
+        return (value,expiration_time)
+
+    if three_day_ema > nine_day_ema:
+        value = True
+
+    if not QUID_OBV_TRENDING_UP in answers.keys():
+        answers[QUID_OBV_TRENDING_UP] = dict()
+        answers[QUID_OBV_TRENDING_UP][CACHE_QUESTION] = "(automated) Is the On Balance Volume trending up?"
+
+    answers[QUID_OBV_TRENDING_UP][CACHE_VALUE] = value
+    answers[QUID_OBV_TRENDING_UP][CACHE_EXPIRATION_TIMESTAMP] = expiration_time
+
+    debug(f"{symbol} ({value}) OBV 3dayEMA {int(three_day_ema)} > OBV 9dayEMA {int(nine_day_ema)}")
+    return (value,expiration_time)
+
+def on_balance_volume(stock_data):
+    volume_data = pd.DataFrame(stock_data[COLUMN_VOLUME])[OBV_DAYS:]
+    volume_data[COLUMN_CLOSE] = pd.DataFrame(stock_data[COLUMN_CLOSE])[OBV_DAYS:]
+
+    for i, (index, row) in enumerate(volume_data.iterrows()):
+        if i > 0:
+            # Not the first row, so adjust OBV based on the price action
+            prev_obv = volume_data.loc[volume_data.index[i - 1], ON_BALANCE_VOLUME]
+            if row[COLUMN_CLOSE] > volume_data.loc[volume_data.index[i - 1], COLUMN_CLOSE]:
+                # Up day
+                obv = prev_obv + row[COLUMN_VOLUME]
+            elif row[COLUMN_CLOSE] < volume_data.loc[volume_data.index[i - 1], COLUMN_CLOSE]:
+                # Down day
+                obv = prev_obv - row[COLUMN_VOLUME]
+            else:
+                # Equals, so keep the previous OBV value
+                obv = prev_obv
+        else:
+            # First row, set prev_obv to zero
+            obv = row[COLUMN_VOLUME]
+            prev_obv = 0
+
+        # Assign the obv value to the correct row
+        volume_data.at[index, ON_BALANCE_VOLUME] = obv
+
+    return volume_data
 
 def get_last_value(price_data,column_name):
     return price_data[column_name].iloc[-1]
