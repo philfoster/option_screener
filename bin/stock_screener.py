@@ -101,8 +101,12 @@ def review_symbol(screener_config_file,symbol):
             now = datetime.datetime.now()
             date_string = f"{date.year}-{date.month:02d}-{date.day:02d}"
             if now > date:
-                date_string = "expired"
-            print(f"  {question} {str(value):5s}({date_string:10s})")
+                date_string += "-expired"
+
+            if value is False:
+                print(f"  ** {question} {str(value):5s}(expires: {date_string})")
+            else:
+                print(f"  {question} {str(value):5s}(expires: {date_string})")
 
 def stock_quote(screener_config,symbol):
     etrade_config = screener_config.get(ETRADE_CONFIG)
