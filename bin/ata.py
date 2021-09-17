@@ -284,7 +284,7 @@ def is_volume_heavy_lately(symbol,price_data,answers):
     answers[QUID_VOLUME_HIGHER][CACHE_VALUE] = value
     answers[QUID_VOLUME_HIGHER][CACHE_EXPIRATION_TIMESTAMP] = expiration_time
 
-    debug(f"{symbol} ({value}) recenty volume {int(vol_3day)} > normal volume {int(vol_20day)}")
+    debug(f"{symbol} ({value}) recent volume {int(vol_3day)} > normal volume {int(vol_20day)}")
     return (value,expiration_time)
 
 def is_obv_positive(symbol,price_data,answers):
