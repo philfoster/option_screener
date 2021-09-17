@@ -29,7 +29,7 @@ ONE_DAY = 24 * 60 * 60
 OBV_DAYS=-60
 
 COLUMN_VOLUME="Volume"
-COLUMN_CLOSE="Close"
+COLUMN_CLOSE="Adj Close"
 
 # Columns
 THREE_DAY_EMA="3dayEMA"
