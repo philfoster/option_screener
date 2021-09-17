@@ -20,8 +20,11 @@ QUID_100DAYEMA_TRENDING_UP="0ba7df53-0911-4af6-b18c-e31e17c264a5"
 QUID_VOLUME_HIGHER="9f407e44-e809-498f-942c-b688f19585d2"
 QUID_OBV_POSITIVE="e30cc0ba-5b6e-43bf-a3d0-29a0b621a34d"
 QUID_OBV_TRENDING_UP="87489c8b-4115-453d-8830-0324158d82d8"
+QUID_MACD_TRENDING_UP="1a8c7983-b0d2-410f-82d4-1aa296f385b3"
+QUID_MACD_DIVERGENCE_POSITIVE="f5f5352e-2af9-4734-bc34-4ef1f1aac763"
+QUID_MACD_POSITIVE_VALUE="b67a5024-7b64-4712-b1a0-d1cf49c3ec33"
 
-FRESHNESS_DAYS=2
+FRESHNESS_DAYS=1
 ONE_DAY = 24 * 60 * 60
 OBV_DAYS=-60
 
@@ -37,6 +40,11 @@ HUNDRED_DAY_EMA="100dayEMA"
 VOL_THREE_DAY="Vol3DayEMA"
 VOL_TWENTY_DAY="Vol20DayEMA"
 ON_BALANCE_VOLUME="OnBalanceVolume"
+
+# MACD Labels
+MACD_LABEL="MACD"
+MACD_DIVERGENCE="Divergence"
+MACD_SIGNAL_LINE="SignalLine"
 
 # Globals
 global GLOBAL_VERBOSE
@@ -61,6 +69,9 @@ def analyze_symbol(screener_config,questions,symbol):
     (value,timestamp) = is_volume_heavy_lately(symbol,price_data,answers)
     (value,timestamp) = is_obv_positive(symbol,price_data,answers)
     (value,timestamp) = is_obv_uptrending(symbol,price_data,answers)
+    (value,timestamp) = is_macd_uptrending(symbol,price_data,answers)
+    (value,timestamp) = is_macd_divergence_positive(symbol,price_data,answers)
+    (value,timestamp) = is_macd_positive(symbol,price_data,answers)
 
     cache_answers(answer_file,answers)
 
@@ -82,6 +93,11 @@ def get_one_year_data(symbol):
     return price_data
 
 def is_fresh(cached_answer):
+
+    # Check to see if "-f" was passed, if so, ignore freshness
+    if GLOBAL_FORCE:
+        return False
+
     now = datetime.datetime.now()
     cached_ts = cached_answer.get(CACHE_EXPIRATION_TIMESTAMP,0)
     if cached_ts > now.timestamp():
@@ -109,7 +125,7 @@ def is_price_uptrending(symbol,price_data,answers):
         print(f"{symbol} error: {e}")
         return (value,expiration_time)
 
-    if three_day_ema > five_day_ema and five_day_ema > nine_day_ema:
+    if (three_day_ema > five_day_ema) and (five_day_ema > nine_day_ema):
         value = True
 
     if not QUID_PRICE_TRENDING_UP in answers.keys():
@@ -358,6 +374,113 @@ def is_obv_uptrending(symbol,price_data,answers):
     debug(f"{symbol} ({value}) OBV 3dayEMA {int(three_day_ema)} > OBV 9dayEMA {int(nine_day_ema)}")
     return (value,expiration_time)
 
+def is_macd_uptrending(symbol,price_data,answers):
+    now = datetime.datetime.now()
+    expiration_time = int(now.timestamp() + (ONE_DAY * FRESHNESS_DAYS))
+    value = False
+
+    cached_answer = answers.get(QUID_MACD_TRENDING_UP,None)
+    if cached_answer:
+        if is_fresh(cached_answer):
+            debug(f"{symbol} returning fresh answer for macd trending up")
+            return (cached_answer.get(CACHE_VALUE),cached_answer.get(CACHE_EXPIRATION_TIMESTAMP))
+
+    debug(f"{symbol} didn't find fresh answer for macd trending up")
+
+    try: 
+        macd_data = generate_macd(price_data)
+        macd_data[THREE_DAY_EMA] = macd_data[MACD_LABEL].ewm(span=3,adjust=False).mean()
+        macd_data[FIVE_DAY_EMA] = macd_data[MACD_LABEL].ewm(span=5,adjust=False).mean()
+
+        macd_value = get_last_value(macd_data,MACD_LABEL)
+        three_day_ema = get_last_value(macd_data,THREE_DAY_EMA)
+        five_day_ema = get_last_value(macd_data,FIVE_DAY_EMA)
+        
+    except IndexError as e:
+        print(f"{symbol} error: {e}")
+        return (value,expiration_time)
+
+    if (macd_value > three_day_ema) and (three_day_ema > five_day_ema):
+        value = True
+
+    if not QUID_MACD_TRENDING_UP in answers.keys():
+        answers[QUID_MACD_TRENDING_UP] = dict()
+        answers[QUID_MACD_TRENDING_UP][CACHE_QUESTION] = "(automated) Is the MACD trending up?"
+
+    answers[QUID_MACD_TRENDING_UP][CACHE_VALUE] = value
+    answers[QUID_MACD_TRENDING_UP][CACHE_EXPIRATION_TIMESTAMP] = expiration_time
+
+    debug(f"{symbol} ({value}) MACD value trending up {macd_value:.2f} > 3dayEMA {three_day_ema:.2f} > 5dayEMA {five_day_ema:.2f}")
+    return (value,expiration_time)
+
+def is_macd_divergence_positive(symbol,price_data,answers):
+    now = datetime.datetime.now()
+    expiration_time = int(now.timestamp() + (ONE_DAY * FRESHNESS_DAYS))
+    value = False
+
+    cached_answer = answers.get(QUID_MACD_DIVERGENCE_POSITIVE,None)
+    if cached_answer:
+        if is_fresh(cached_answer):
+            debug(f"{symbol} returning fresh answer for macd divergence positive")
+            return (cached_answer.get(CACHE_VALUE),cached_answer.get(CACHE_EXPIRATION_TIMESTAMP))
+
+    debug(f"{symbol} didn't find fresh answer for macd divergence positive")
+
+    try: 
+        macd_data = generate_macd(price_data)
+        macd_histogram = get_last_value(macd_data,MACD_DIVERGENCE)
+        
+    except IndexError as e:
+        print(f"{symbol} error: {e}")
+        return (value,expiration_time)
+
+    if macd_histogram > 0:
+        value = True
+
+    if not QUID_MACD_DIVERGENCE_POSITIVE in answers.keys():
+        answers[QUID_MACD_DIVERGENCE_POSITIVE] = dict()
+        answers[QUID_MACD_DIVERGENCE_POSITIVE][CACHE_QUESTION] = "(automated) Is the MACD Divergence Positive?"
+
+    answers[QUID_MACD_DIVERGENCE_POSITIVE][CACHE_VALUE] = value
+    answers[QUID_MACD_DIVERGENCE_POSITIVE][CACHE_EXPIRATION_TIMESTAMP] = expiration_time
+
+    debug(f"{symbol} ({value}) MACD Divergence {macd_histogram:.2f} > 0")
+    return (value,expiration_time)
+
+def is_macd_positive(symbol,price_data,answers):
+    now = datetime.datetime.now()
+    expiration_time = int(now.timestamp() + (ONE_DAY * FRESHNESS_DAYS))
+    value = False
+
+    cached_answer = answers.get(QUID_MACD_POSITIVE_VALUE,None)
+    if cached_answer:
+        if is_fresh(cached_answer):
+            debug(f"{symbol} returning fresh answer for macd value positive")
+            return (cached_answer.get(CACHE_VALUE),cached_answer.get(CACHE_EXPIRATION_TIMESTAMP))
+
+    debug(f"{symbol} didn't find fresh answer for macd value positive")
+
+    try: 
+        macd_data = generate_macd(price_data)
+        macd_value = get_last_value(macd_data,MACD_LABEL)
+        
+    except IndexError as e:
+        print(f"{symbol} error: {e}")
+        return (value,expiration_time)
+
+    if macd_value > 0:
+        value = True
+
+    if not QUID_MACD_POSITIVE_VALUE in answers.keys():
+        answers[QUID_MACD_POSITIVE_VALUE] = dict()
+        answers[QUID_MACD_POSITIVE_VALUE][CACHE_QUESTION] = "(automated) Is the MACD Value Positive?"
+
+    answers[QUID_MACD_POSITIVE_VALUE][CACHE_VALUE] = value
+    answers[QUID_MACD_POSITIVE_VALUE][CACHE_EXPIRATION_TIMESTAMP] = expiration_time
+
+    debug(f"{symbol} ({value}) MACD value {macd_value:.2f} > 0")
+    return (value,expiration_time)
+
 def on_balance_volume(stock_data):
     volume_data = pd.DataFrame(stock_data[COLUMN_VOLUME])[OBV_DAYS:]
     volume_data[COLUMN_CLOSE] = pd.DataFrame(stock_data[COLUMN_CLOSE])[OBV_DAYS:]
@@ -385,6 +508,18 @@ def on_balance_volume(stock_data):
 
     return volume_data
 
+def generate_macd(stock_data,long=26,short=12,signal=9):
+    macd = pd.DataFrame(stock_data[COLUMN_CLOSE])
+
+    shortEMA = stock_data[COLUMN_CLOSE].ewm(span=short,adjust=False).mean()
+    longEMA = stock_data[COLUMN_CLOSE].ewm(span=long,adjust=False).mean()
+
+    macd[MACD_LABEL] = shortEMA - longEMA
+    macd[MACD_SIGNAL_LINE] = macd[MACD_LABEL].ewm(span=signal,adjust=False).mean()
+    macd[MACD_DIVERGENCE] = macd[MACD_LABEL] - macd[MACD_SIGNAL_LINE]
+
+    return macd
+
 def get_last_value(price_data,column_name):
     return price_data[column_name].iloc[-1]
 
@@ -398,9 +533,11 @@ if __name__ == "__main__":
     parser.add_argument('-c','--config-file', dest='config_file', help="screener configuration file", default=DEFAULT_SCREENER_CONFIG_FILE)
     parser.add_argument('-v','--verbose', dest='verbose', required=False,default=False,action='store_true',help="Increase verbosity")
     parser.add_argument('-s','--symbol', dest='symbol', required=False,default=None,help="Analyze a symbol")
+    parser.add_argument('-f','--force', dest='force', required=False,default=False,action='store_true',help="Force update (ignore fresh answers)")
     args = parser.parse_args()
 
     GLOBAL_VERBOSE = args.verbose
+    GLOBAL_FORCE = args.force
 
     yf.pdr_override()
 
