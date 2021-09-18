@@ -112,7 +112,7 @@ def is_price_uptrending(symbol,price_data,answers):
     cached_answer = answers.get(QUID_PRICE_TRENDING_UP,None)
     if cached_answer:
         if is_fresh(cached_answer):
-            debug(f"{symbol} returning fresh answer for price trending up")
+            debug(f"{symbol} returning fresh answer {cached_answer.get(CACHE_VALUE)} for price trending up")
             return (cached_answer.get(CACHE_VALUE),cached_answer.get(CACHE_EXPIRATION_TIMESTAMP))
 
     debug(f"{symbol} didn't find fresh answer for price trending up")
@@ -146,7 +146,7 @@ def is_price_above_20dayEMA(symbol,price_data,answers):
     cached_answer = answers.get(QUID_PRICE_ABOVE_20DAYEMA,None)
     if cached_answer:
         if is_fresh(cached_answer):
-            debug(f"{symbol} returning fresh answer for price above 20dayEMA")
+            debug(f"{symbol} returning fresh answer {cached_answer.get(CACHE_VALUE)} for price above 20dayEMA")
             return (cached_answer.get(CACHE_VALUE),cached_answer.get(CACHE_EXPIRATION_TIMESTAMP))
 
     debug(f"{symbol} didn't find fresh answer for price above 20dayEMA")
@@ -179,7 +179,7 @@ def is_20dayEMA_uptrending(symbol,price_data,answers):
     cached_answer = answers.get(QUID_20DAYEMA_TRENDING_UP,None)
     if cached_answer:
         if is_fresh(cached_answer):
-            debug(f"{symbol} returning fresh answer for 20dayEMA trending up")
+            debug(f"{symbol} returning fresh answer {cached_answer.get(CACHE_VALUE)} for 20dayEMA trending up")
             return (cached_answer.get(CACHE_VALUE),cached_answer.get(CACHE_EXPIRATION_TIMESTAMP))
 
     debug(f"{symbol} didn't find fresh answer for 20dayEMA trending up")
@@ -212,7 +212,7 @@ def is_20dayEMA_above_100dayEMA(symbol,price_data,answers):
     cached_answer = answers.get(QUID_20DAYEMA_ABOVE_100DAYEMA,None)
     if cached_answer:
         if is_fresh(cached_answer):
-            debug(f"{symbol} returning fresh answer for 20dayEMA above 100dayEMA")
+            debug(f"{symbol} returning fresh answer {cached_answer.get(CACHE_VALUE)} for 20dayEMA above 100dayEMA")
             return (cached_answer.get(CACHE_VALUE),cached_answer.get(CACHE_EXPIRATION_TIMESTAMP))
 
     debug(f"{symbol} didn't find fresh answer for 20dayEMA above 100dayEMA")
@@ -245,7 +245,7 @@ def is_100dayEMA_uptrending(symbol,price_data,answers):
     cached_answer = answers.get(QUID_100DAYEMA_TRENDING_UP,None)
     if cached_answer:
         if is_fresh(cached_answer):
-            debug(f"{symbol} returning fresh answer for 100dayEMA trending up")
+            debug(f"{symbol} returning fresh answer {cached_answer.get(CACHE_VALUE)} for 100dayEMA trending up")
             return (cached_answer.get(CACHE_VALUE),cached_answer.get(CACHE_EXPIRATION_TIMESTAMP))
 
     debug(f"{symbol} didn't find fresh answer for 100dayEMA trending up")
@@ -278,7 +278,7 @@ def is_volume_heavy_lately(symbol,price_data,answers):
     cached_answer = answers.get(QUID_VOLUME_HIGHER,None)
     if cached_answer:
         if is_fresh(cached_answer):
-            debug(f"{symbol} returning fresh answer for heavy volume")
+            debug(f"{symbol} returning fresh answer {cached_answer.get(CACHE_VALUE)} for heavy volume")
             return (cached_answer.get(CACHE_VALUE),cached_answer.get(CACHE_EXPIRATION_TIMESTAMP))
 
     debug(f"{symbol} didn't find fresh answer for heavy volume")
@@ -311,7 +311,7 @@ def is_obv_positive(symbol,price_data,answers):
     cached_answer = answers.get(QUID_OBV_POSITIVE,None)
     if cached_answer:
         if is_fresh(cached_answer):
-            debug(f"{symbol} returning fresh answer for obv positive")
+            debug(f"{symbol} returning fresh answer {cached_answer.get(CACHE_VALUE)} for obv positive")
             return (cached_answer.get(CACHE_VALUE),cached_answer.get(CACHE_EXPIRATION_TIMESTAMP))
 
     debug(f"{symbol} didn't find fresh answer for obv positive")
@@ -344,7 +344,7 @@ def is_obv_uptrending(symbol,price_data,answers):
     cached_answer = answers.get(QUID_OBV_TRENDING_UP,None)
     if cached_answer:
         if is_fresh(cached_answer):
-            debug(f"{symbol} returning fresh answer for obv trending up")
+            debug(f"{symbol} returning fresh answer {cached_answer.get(CACHE_VALUE)} for obv trending up")
             return (cached_answer.get(CACHE_VALUE),cached_answer.get(CACHE_EXPIRATION_TIMESTAMP))
 
     debug(f"{symbol} didn't find fresh answer for obv trending up")
@@ -382,7 +382,7 @@ def is_macd_uptrending(symbol,price_data,answers):
     cached_answer = answers.get(QUID_MACD_TRENDING_UP,None)
     if cached_answer:
         if is_fresh(cached_answer):
-            debug(f"{symbol} returning fresh answer for macd trending up")
+            debug(f"{symbol} returning fresh answer {cached_answer.get(CACHE_VALUE)} for macd trending up")
             return (cached_answer.get(CACHE_VALUE),cached_answer.get(CACHE_EXPIRATION_TIMESTAMP))
 
     debug(f"{symbol} didn't find fresh answer for macd trending up")
@@ -421,7 +421,7 @@ def is_macd_divergence_positive(symbol,price_data,answers):
     cached_answer = answers.get(QUID_MACD_DIVERGENCE_POSITIVE,None)
     if cached_answer:
         if is_fresh(cached_answer):
-            debug(f"{symbol} returning fresh answer for macd divergence positive")
+            debug(f"{symbol} returning fresh answer {cached_answer.get(CACHE_VALUE)} for macd divergence positive")
             return (cached_answer.get(CACHE_VALUE),cached_answer.get(CACHE_EXPIRATION_TIMESTAMP))
 
     debug(f"{symbol} didn't find fresh answer for macd divergence positive")
@@ -455,7 +455,7 @@ def is_macd_positive(symbol,price_data,answers):
     cached_answer = answers.get(QUID_MACD_POSITIVE_VALUE,None)
     if cached_answer:
         if is_fresh(cached_answer):
-            debug(f"{symbol} returning fresh answer for macd value positive")
+            debug(f"{symbol} returning fresh answer {cached_answer.get(CACHE_VALUE)} for macd value positive")
             return (cached_answer.get(CACHE_VALUE),cached_answer.get(CACHE_EXPIRATION_TIMESTAMP))
 
     debug(f"{symbol} didn't find fresh answer for macd value positive")
