@@ -45,7 +45,7 @@ def main(screener_config_file,summary_quote,output_file):
         
         if summary_quote:
             quote = stock_quote(screener_config, symbol)
-            print(f"\t{symbol:5s} (score={score:-6.2f}%, price=${quote.get_price():7.2f})")
+            print(f"\t{symbol:5s} (score={score:-6.2f}%, price=${quote.get_price():7.2f}, sector={quote.get_sector()})")
         else:
             print(f"\t{symbol:5s} (score={score:-6.2f})%")
 
@@ -53,7 +53,7 @@ def main(screener_config_file,summary_quote,output_file):
         try:
             with open(output_file,"w") as of:
                 if summary_quote:
-                    of.write(f"Symbol,Score,Price\n")
+                    of.write(f"Symbol,Score,Price,Sector\n")
                 else:
                     of.write(f"Symbol,Score\n")
                 for symbol in passing.keys():
@@ -61,7 +61,7 @@ def main(screener_config_file,summary_quote,output_file):
                     
                     if summary_quote:
                         quote = stock_quote(screener_config, symbol)
-                        of.write(f"{symbol},{score:.2f},${quote.get_price():.2f}\n")
+                        of.write(f"{symbol},{score:.2f},${quote.get_price():.2f},{quote.get_sector()}\n")
                     else:
                         of.write(f"{symbol},{score:.2f}\n")
         except OSError as e:
