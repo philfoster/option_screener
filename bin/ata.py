@@ -23,6 +23,9 @@ QUID_OBV_TRENDING_UP="87489c8b-4115-453d-8830-0324158d82d8"
 QUID_MACD_TRENDING_UP="1a8c7983-b0d2-410f-82d4-1aa296f385b3"
 QUID_MACD_DIVERGENCE_POSITIVE="f5f5352e-2af9-4734-bc34-4ef1f1aac763"
 QUID_MACD_POSITIVE_VALUE="b67a5024-7b64-4712-b1a0-d1cf49c3ec33"
+QUID_SLOW_STOCHASTIC_POSITIVE="5f688dd9-8451-4f41-acc0-26c1e485fc5c"
+QUID_SLOW_STOCHASTIC_UPTRENDING="8ebf903c-110a-4ff3-8c73-95ab6323fec8"
+QUID_SLOW_STOCHASTIC_ABOVE_20="0122c7e7-bc9c-4879-8492-e8f9f7e25940"
 
 FRESHNESS_DAYS=1
 ONE_DAY = 24 * 60 * 60
@@ -30,6 +33,15 @@ OBV_DAYS=-60
 
 COLUMN_VOLUME="Volume"
 COLUMN_CLOSE="Adj Close"
+COLUMN_HIGH="High"
+COLUMN_LOW="Low"
+
+# Slow Stochastics Labels
+SS_PERIOD_HIGH="PeriodHigh"
+SS_PERIOD_LOW="PeriodLow"
+SS_FAST_K="FastK"
+SS_K="%K"
+SS_D="%D"
 
 # Columns
 THREE_DAY_EMA="3dayEMA"
@@ -72,6 +84,9 @@ def analyze_symbol(screener_config,questions,symbol):
     (value,timestamp) = is_macd_uptrending(symbol,price_data,answers)
     (value,timestamp) = is_macd_divergence_positive(symbol,price_data,answers)
     (value,timestamp) = is_macd_positive(symbol,price_data,answers)
+    (value,timestamp) = is_slow_stochastic_positive(symbol,price_data,answers)
+    (value,timestamp) = is_slow_stochastic_uptrending(symbol,price_data,answers)
+    (value,timestamp) = is_slow_stochastic_above_20(symbol,price_data,answers)
 
     cache_answers(answer_file,answers)
 
@@ -481,6 +496,117 @@ def is_macd_positive(symbol,price_data,answers):
     debug(f"{symbol} ({value}) MACD value {macd_value:.2f} > 0")
     return (value,expiration_time)
 
+def is_slow_stochastic_positive(symbol,price_data,answers):
+    now = datetime.datetime.now()
+    expiration_time = int(now.timestamp() + (ONE_DAY * FRESHNESS_DAYS))
+    value = False
+
+    cached_answer = answers.get(QUID_SLOW_STOCHASTIC_POSITIVE,None)
+    if cached_answer:
+        if is_fresh(cached_answer):
+            debug(f"{symbol} returning fresh answer {cached_answer.get(CACHE_VALUE)} for slow stochastic positive")
+            return (cached_answer.get(CACHE_VALUE),cached_answer.get(CACHE_EXPIRATION_TIMESTAMP))
+
+    debug(f"{symbol} didn't find fresh answer for slow stochastic positive")
+
+    try: 
+        ss = slow_stochastic_oscillator(price_data)
+        k_val = get_last_value(ss,SS_K)
+        d_val = get_last_value(ss,SS_D)
+        
+    except IndexError as e:
+        print(f"{symbol} error: {e}")
+        return (value,expiration_time)
+
+    if k_val > d_val:
+        value = True
+
+    if not QUID_SLOW_STOCHASTIC_POSITIVE in answers.keys():
+        answers[QUID_SLOW_STOCHASTIC_POSITIVE] = dict()
+        answers[QUID_SLOW_STOCHASTIC_POSITIVE][CACHE_QUESTION] = "(automated) Is the Slow Stochastic Positive?"
+
+    answers[QUID_SLOW_STOCHASTIC_POSITIVE][CACHE_VALUE] = value
+    answers[QUID_SLOW_STOCHASTIC_POSITIVE][CACHE_EXPIRATION_TIMESTAMP] = expiration_time
+
+    debug(f"{symbol} ({value}) slow stochastic %K({k_val:.2f}) > %D({d_val:.2f})")
+    return (value,expiration_time)
+
+def is_slow_stochastic_uptrending(symbol,price_data,answers):
+    now = datetime.datetime.now()
+    expiration_time = int(now.timestamp() + (ONE_DAY * FRESHNESS_DAYS))
+    value = False
+
+    cached_answer = answers.get(QUID_SLOW_STOCHASTIC_UPTRENDING,None)
+    if cached_answer:
+        if is_fresh(cached_answer):
+            debug(f"{symbol} returning fresh answer {cached_answer.get(CACHE_VALUE)} for slow stochastic uptrending")
+            return (cached_answer.get(CACHE_VALUE),cached_answer.get(CACHE_EXPIRATION_TIMESTAMP))
+
+    debug(f"{symbol} didn't find fresh answer for slow stochastic uptrending")
+
+    try: 
+        ss = slow_stochastic_oscillator(price_data)
+
+        # Get the 3day and 5day EMA of %K
+        ss[THREE_DAY_EMA] = ss[SS_K].ewm(span=3,adjust=False).mean()
+        ss[FIVE_DAY_EMA] = ss[SS_K].ewm(span=5,adjust=False).mean()
+
+        three_day_ema = get_last_value(ss,THREE_DAY_EMA)
+        five_day_ema = get_last_value(ss,FIVE_DAY_EMA)
+        
+    except IndexError as e:
+        print(f"{symbol} error: {e}")
+        return (value,expiration_time)
+
+    if three_day_ema > five_day_ema:
+        value = True
+
+    if not QUID_SLOW_STOCHASTIC_UPTRENDING in answers.keys():
+        answers[QUID_SLOW_STOCHASTIC_UPTRENDING] = dict()
+        answers[QUID_SLOW_STOCHASTIC_UPTRENDING][CACHE_QUESTION] = "(automated) Is the Slow Stochastic Uptrending?"
+
+    answers[QUID_SLOW_STOCHASTIC_UPTRENDING][CACHE_VALUE] = value
+    answers[QUID_SLOW_STOCHASTIC_UPTRENDING][CACHE_EXPIRATION_TIMESTAMP] = expiration_time
+
+    debug(f"{symbol} ({value}) %K 3dayEMA({three_day_ema:.2f}) > 5dayEMA({five_day_ema:.2f})")
+
+    return (value,expiration_time)
+
+def is_slow_stochastic_above_20(symbol,price_data,answers):
+    now = datetime.datetime.now()
+    expiration_time = int(now.timestamp() + (ONE_DAY * FRESHNESS_DAYS))
+    value = False
+
+    cached_answer = answers.get(QUID_SLOW_STOCHASTIC_ABOVE_20,None)
+    if cached_answer:
+        if is_fresh(cached_answer):
+            debug(f"{symbol} returning fresh answer {cached_answer.get(CACHE_VALUE)} for slow stochastic > 20")
+            return (cached_answer.get(CACHE_VALUE),cached_answer.get(CACHE_EXPIRATION_TIMESTAMP))
+
+    debug(f"{symbol} didn't find fresh answer for slow stochastic > 20")
+
+    try: 
+        ss = slow_stochastic_oscillator(price_data)
+        k = get_last_value(ss,SS_K)
+        
+    except IndexError as e:
+        print(f"{symbol} error: {e}")
+        return (value,expiration_time)
+
+    if k > 20:
+        value = True
+
+    if not QUID_SLOW_STOCHASTIC_ABOVE_20 in answers.keys():
+        answers[QUID_SLOW_STOCHASTIC_ABOVE_20] = dict()
+        answers[QUID_SLOW_STOCHASTIC_ABOVE_20][CACHE_QUESTION] = "(automated) Is the Slow Stochastic Above 20?"
+
+    answers[QUID_SLOW_STOCHASTIC_ABOVE_20][CACHE_VALUE] = value
+    answers[QUID_SLOW_STOCHASTIC_ABOVE_20][CACHE_EXPIRATION_TIMESTAMP] = expiration_time
+
+    debug(f"{symbol} ({value}) slow stochastic %K ({k:.2f}) > 20")
+
+    return (value,expiration_time)
+
 def on_balance_volume(stock_data):
     volume_data = pd.DataFrame(stock_data[COLUMN_VOLUME])[OBV_DAYS:]
     volume_data[COLUMN_CLOSE] = pd.DataFrame(stock_data[COLUMN_CLOSE])[OBV_DAYS:]
@@ -519,6 +645,24 @@ def generate_macd(stock_data,long=26,short=12,signal=9):
     macd[MACD_DIVERGENCE] = macd[MACD_LABEL] - macd[MACD_SIGNAL_LINE]
 
     return macd
+
+def slow_stochastic_oscillator(stock_data,period=14,k=3,d=3):
+
+    # Start with the close prices
+    ss = pd.DataFrame(stock_data[COLUMN_CLOSE])
+
+    # Grab the highest high and lowest low for the period
+    ss[SS_PERIOD_LOW] = stock_data[COLUMN_LOW].rolling(window=period).min()
+    ss[SS_PERIOD_HIGH] = stock_data[COLUMN_HIGH].rolling(window=period).max()
+
+    # Calculate the fast %K value
+    ss[SS_FAST_K] = 100*((stock_data[COLUMN_CLOSE] - ss[SS_PERIOD_LOW]) / (ss[SS_PERIOD_HIGH] - ss[SS_PERIOD_LOW]) )
+
+    # Slow %k is 
+    ss[SS_K] = ss[SS_FAST_K].rolling(window=k).mean()
+    ss[SS_D] = ss[SS_K].rolling(window=d).mean()
+
+    return ss
 
 def get_last_value(price_data,column_name):
     return price_data[column_name].iloc[-1]
