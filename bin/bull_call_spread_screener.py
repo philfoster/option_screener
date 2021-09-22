@@ -107,6 +107,7 @@ def main(config_file,option_parameters_file,symbol,expiration):
                 print(f"{symbol.upper()}({option_chain.get_expiration().date()}) Bull Credit Spread: days={days}  price=${price:.2f}  beta={quote.get_beta():.2f}")
                 print(f"\tLong Call : ${long_call_strike_price:6.2f}  ask=${long_call_ask:.2f}  time value=${long_call_theta:.2f}  oi={long_call.get_open_interest()}  delta={long_call.get_delta()}")
                 print(f"\tShort Call: ${short_call_strike_price:6.2f}  bid=${short_call_bid:.2f}  time value=${short_call_theta:.2f}  oi={short_call.get_open_interest()}  delta={short_call.get_delta()}")
+                print(f"\tBreak even: ${short_call_strike_price - theta_spread:9.2f}")
                 print(f"\tCost      : ${cost:9.2f}")
                 print(f"\tProfit    : ${100*theta_spread:9.2f}")
                 print(f"\tROO       : {100*return_on_spread:10.2f}% ({100*roo_annualized:6.2f}%)")
