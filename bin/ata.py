@@ -8,6 +8,8 @@ import sys
 
 from pandas_datareader import data as pdr
 from etrade_tools import *
+from stock_chart_tools.utils import get_historical_data, EMA, OBV, SSO, MACD
+from stock_chart_tools.utils import COLUMN_CLOSE, COLUMN_VOLUME, COLUMN_HIGH, COLUMN_LOW, MACD_DIVERGENCE, MACD_LABEL, OBV_LABEL, SS_K, SS_D
 
 DEFAULT_SCREENER_CONFIG_FILE="stock_screener.json"
 
@@ -29,19 +31,6 @@ QUID_SLOW_STOCHASTIC_ABOVE_20="0122c7e7-bc9c-4879-8492-e8f9f7e25940"
 
 FRESHNESS_DAYS=1
 ONE_DAY = 24 * 60 * 60
-OBV_DAYS=-60
-
-COLUMN_VOLUME="Volume"
-COLUMN_CLOSE="Adj Close"
-COLUMN_HIGH="High"
-COLUMN_LOW="Low"
-
-# Slow Stochastics Labels
-SS_PERIOD_HIGH="PeriodHigh"
-SS_PERIOD_LOW="PeriodLow"
-SS_FAST_K="FastK"
-SS_K="%K"
-SS_D="%D"
 
 # Columns
 THREE_DAY_EMA="3dayEMA"
@@ -51,12 +40,6 @@ TWENTY_DAY_EMA="20dayEMA"
 HUNDRED_DAY_EMA="100dayEMA"
 VOL_THREE_DAY="Vol3DayEMA"
 VOL_TWENTY_DAY="Vol20DayEMA"
-ON_BALANCE_VOLUME="OnBalanceVolume"
-
-# MACD Labels
-MACD_LABEL="MACD"
-MACD_DIVERGENCE="Divergence"
-MACD_SIGNAL_LINE="SignalLine"
 
 # Globals
 global GLOBAL_VERBOSE
@@ -91,19 +74,16 @@ def analyze_symbol(screener_config,questions,symbol):
     cache_answers(answer_file,answers)
 
 def get_one_year_data(symbol):
-    now = datetime.datetime.now()
-    end_date = f"{now.year}-{now.month:02d}-{now.day:02d}"
-    start_date = f"{now.year -1}-{now.month:02d}-{now.day:02d}"
-    price_data = pdr.get_data_yahoo(symbol,start=start_date,end=end_date)
+    price_data = get_historical_data(symbol)
 
-    price_data[THREE_DAY_EMA] = price_data[COLUMN_CLOSE].ewm(span=3,adjust=False).mean()
-    price_data[FIVE_DAY_EMA] = price_data[COLUMN_CLOSE].ewm(span=5,adjust=False).mean()
-    price_data[NINE_DAY_EMA] = price_data[COLUMN_CLOSE].ewm(span=9,adjust=False).mean()
-    price_data[TWENTY_DAY_EMA] = price_data[COLUMN_CLOSE].ewm(span=20,adjust=False).mean()
-    price_data[HUNDRED_DAY_EMA] = price_data[COLUMN_CLOSE].ewm(span=100,adjust=False).mean()
+    price_data[THREE_DAY_EMA] = EMA(price_data[COLUMN_CLOSE],3)
+    price_data[FIVE_DAY_EMA] = EMA(price_data[COLUMN_CLOSE],5)
+    price_data[NINE_DAY_EMA] = EMA(price_data[COLUMN_CLOSE],9)
+    price_data[TWENTY_DAY_EMA] = EMA(price_data[COLUMN_CLOSE],20)
+    price_data[HUNDRED_DAY_EMA] = EMA(price_data[COLUMN_CLOSE],100)
 
-    price_data[VOL_THREE_DAY] = price_data[COLUMN_VOLUME].ewm(span=3,adjust=False).mean()
-    price_data[VOL_TWENTY_DAY] = price_data[COLUMN_VOLUME].ewm(span=20,adjust=False).mean()
+    price_data[VOL_THREE_DAY] = EMA(price_data[COLUMN_VOLUME],3)
+    price_data[VOL_TWENTY_DAY] = EMA(price_data[COLUMN_VOLUME],20)
 
     return price_data
 
@@ -118,6 +98,14 @@ def is_fresh(cached_answer):
     if cached_ts > now.timestamp():
         return True
     return False
+
+def store_result(answers,quid,value,expiration_time,question_text):
+    if not quid in answers.keys():
+        answers[quid] = dict()
+        answers[quid][CACHE_QUESTION] = question_text
+
+    answers[quid][CACHE_VALUE] = value
+    answers[quid][CACHE_EXPIRATION_TIMESTAMP] = expiration_time
 
 def is_price_uptrending(symbol,price_data,answers):
     now = datetime.datetime.now()
@@ -143,12 +131,7 @@ def is_price_uptrending(symbol,price_data,answers):
     if (three_day_ema > five_day_ema) and (five_day_ema > nine_day_ema):
         value = True
 
-    if not QUID_PRICE_TRENDING_UP in answers.keys():
-        answers[QUID_PRICE_TRENDING_UP] = dict()
-        answers[QUID_PRICE_TRENDING_UP][CACHE_QUESTION] = "(automated) Is the price trending up?"
-
-    answers[QUID_PRICE_TRENDING_UP][CACHE_VALUE] = value
-    answers[QUID_PRICE_TRENDING_UP][CACHE_EXPIRATION_TIMESTAMP] = expiration_time
+    store_result(answers,QUID_PRICE_TRENDING_UP,value,expiration_time, "(automated) Is the price trending up?")
 
     debug(f"{symbol} ({value}) 3dayEMA {three_day_ema} > 5dayEMA {five_day_ema} > 9dayEMA {nine_day_ema}")
     return (value,expiration_time)
@@ -176,12 +159,7 @@ def is_price_above_20dayEMA(symbol,price_data,answers):
     if price > twenty_day_ema:
         value = True
 
-    if not QUID_PRICE_ABOVE_20DAYEMA in answers.keys():
-        answers[QUID_PRICE_ABOVE_20DAYEMA] = dict()
-        answers[QUID_PRICE_ABOVE_20DAYEMA][CACHE_QUESTION] = "(automated) Is the price above the 20 day?"
-
-    answers[QUID_PRICE_ABOVE_20DAYEMA][CACHE_VALUE] = value
-    answers[QUID_PRICE_ABOVE_20DAYEMA][CACHE_EXPIRATION_TIMESTAMP] = expiration_time
+    store_result(answers,QUID_PRICE_ABOVE_20DAYEMA,value,expiration_time,"(automated) Is the price above the 20 day?")
 
     debug(f"{symbol} ({value}) price {price} > 20dayEMA {twenty_day_ema}")
     return (value,expiration_time)
@@ -209,12 +187,7 @@ def is_20dayEMA_uptrending(symbol,price_data,answers):
     if twenty_day_ema > prev_twenty_day_ema:
         value = True
 
-    if not QUID_20DAYEMA_TRENDING_UP in answers.keys():
-        answers[QUID_20DAYEMA_TRENDING_UP] = dict()
-        answers[QUID_20DAYEMA_TRENDING_UP][CACHE_QUESTION] = "(automated) Is the 20dayEMA trending up?"
-
-    answers[QUID_20DAYEMA_TRENDING_UP][CACHE_VALUE] = value
-    answers[QUID_20DAYEMA_TRENDING_UP][CACHE_EXPIRATION_TIMESTAMP] = expiration_time
+    store_result(answers,QUID_20DAYEMA_TRENDING_UP,value,expiration_time,"(automated) Is the 20dayEMA trending up?")
 
     debug(f"{symbol} ({value}) 20dayEMA {twenty_day_ema} > 20dayEMA(five days ago) {prev_twenty_day_ema}")
     return (value,expiration_time)
@@ -242,12 +215,7 @@ def is_20dayEMA_above_100dayEMA(symbol,price_data,answers):
     if twenty_day_ema > hundred_day_ema:
         value = True
 
-    if not QUID_20DAYEMA_ABOVE_100DAYEMA in answers.keys():
-        answers[QUID_20DAYEMA_ABOVE_100DAYEMA] = dict()
-        answers[QUID_20DAYEMA_ABOVE_100DAYEMA][CACHE_QUESTION] = "(automated) Is the 20dayEMA above the 100dayEMA?"
-
-    answers[QUID_20DAYEMA_ABOVE_100DAYEMA][CACHE_VALUE] = value
-    answers[QUID_20DAYEMA_ABOVE_100DAYEMA][CACHE_EXPIRATION_TIMESTAMP] = expiration_time
+    store_result(answers,QUID_20DAYEMA_ABOVE_100DAYEMA,value,expiration_time,"(automated) Is the 20dayEMA above the 100dayEMA?")
 
     debug(f"{symbol} ({value}) 20dayEMA {twenty_day_ema} > 100dayEMA {hundred_day_ema}")
     return (value,expiration_time)
@@ -275,12 +243,7 @@ def is_100dayEMA_uptrending(symbol,price_data,answers):
     if hundred_day_ema > prev_hundred_day_ema:
         value = True
 
-    if not QUID_100DAYEMA_TRENDING_UP in answers.keys():
-        answers[QUID_100DAYEMA_TRENDING_UP] = dict()
-        answers[QUID_100DAYEMA_TRENDING_UP][CACHE_QUESTION] = "(automated) Is the 100dayEMA trending up?"
-
-    answers[QUID_100DAYEMA_TRENDING_UP][CACHE_VALUE] = value
-    answers[QUID_100DAYEMA_TRENDING_UP][CACHE_EXPIRATION_TIMESTAMP] = expiration_time
+    store_result(answers,QUID_100DAYEMA_TRENDING_UP,value,expiration_time,"(automated) Is the 100dayEMA trending up?")
 
     debug(f"{symbol} ({value}) 100dayEMA {hundred_day_ema} > 100dayEMA(five days ago) {prev_hundred_day_ema}")
     return (value,expiration_time)
@@ -308,12 +271,7 @@ def is_volume_heavy_lately(symbol,price_data,answers):
     if vol_3day > vol_20day:
         value = True
 
-    if not QUID_VOLUME_HIGHER in answers.keys():
-        answers[QUID_VOLUME_HIGHER] = dict()
-        answers[QUID_VOLUME_HIGHER][CACHE_QUESTION] = "(automated) Is the volume greater than the average?"
-
-    answers[QUID_VOLUME_HIGHER][CACHE_VALUE] = value
-    answers[QUID_VOLUME_HIGHER][CACHE_EXPIRATION_TIMESTAMP] = expiration_time
+    store_result(answers,QUID_VOLUME_HIGHER,value,expiration_time,"(automated) Is the volume greater than the average?")
 
     debug(f"{symbol} ({value}) recent volume {int(vol_3day)} > normal volume {int(vol_20day)}")
     return (value,expiration_time)
@@ -332,8 +290,8 @@ def is_obv_positive(symbol,price_data,answers):
     debug(f"{symbol} didn't find fresh answer for obv positive")
 
     try: 
-        obv_data = on_balance_volume(price_data)
-        current_obv = get_last_value(obv_data,ON_BALANCE_VOLUME)
+        obv_data = OBV(price_data[COLUMN_CLOSE],price_data[COLUMN_VOLUME])
+        current_obv = get_last_value(obv_data,OBV_LABEL)
     except IndexError as e:
         print(f"{symbol} error: {e}")
         return (value,expiration_time)
@@ -341,12 +299,7 @@ def is_obv_positive(symbol,price_data,answers):
     if current_obv > 0:
         value = True
 
-    if not QUID_OBV_POSITIVE in answers.keys():
-        answers[QUID_OBV_POSITIVE] = dict()
-        answers[QUID_OBV_POSITIVE][CACHE_QUESTION] = "(automated) Is the On Balance Volume positive?"
-
-    answers[QUID_OBV_POSITIVE][CACHE_VALUE] = value
-    answers[QUID_OBV_POSITIVE][CACHE_EXPIRATION_TIMESTAMP] = expiration_time
+    store_result(answers,QUID_OBV_POSITIVE,value,expiration_time,"(automated) Is the On Balance Volume positive?")
 
     debug(f"{symbol} ({value}) on balance volume {current_obv} > 0")
     return (value,expiration_time)
@@ -365,9 +318,9 @@ def is_obv_uptrending(symbol,price_data,answers):
     debug(f"{symbol} didn't find fresh answer for obv trending up")
 
     try: 
-        obv_data = on_balance_volume(price_data)
-        obv_data[THREE_DAY_EMA] = obv_data[ON_BALANCE_VOLUME].ewm(span=3,adjust=False).mean()
-        obv_data[NINE_DAY_EMA] = obv_data[ON_BALANCE_VOLUME].ewm(span=9,adjust=False).mean()
+        obv_data = OBV(price_data[COLUMN_CLOSE],price_data[COLUMN_VOLUME])
+        obv_data[THREE_DAY_EMA] = EMA(obv_data[OBV_LABEL],3)
+        obv_data[NINE_DAY_EMA] = EMA(obv_data[OBV_LABEL],9)
 
         three_day_ema = get_last_value(obv_data,THREE_DAY_EMA)
         nine_day_ema = get_last_value(obv_data,NINE_DAY_EMA)
@@ -379,12 +332,7 @@ def is_obv_uptrending(symbol,price_data,answers):
     if three_day_ema > nine_day_ema:
         value = True
 
-    if not QUID_OBV_TRENDING_UP in answers.keys():
-        answers[QUID_OBV_TRENDING_UP] = dict()
-        answers[QUID_OBV_TRENDING_UP][CACHE_QUESTION] = "(automated) Is the On Balance Volume trending up?"
-
-    answers[QUID_OBV_TRENDING_UP][CACHE_VALUE] = value
-    answers[QUID_OBV_TRENDING_UP][CACHE_EXPIRATION_TIMESTAMP] = expiration_time
+    store_result(answers,QUID_OBV_TRENDING_UP,value,expiration_time,"(automated) Is the On Balance Volume trending up?")
 
     debug(f"{symbol} ({value}) OBV 3dayEMA {int(three_day_ema)} > OBV 9dayEMA {int(nine_day_ema)}")
     return (value,expiration_time)
@@ -403,9 +351,9 @@ def is_macd_uptrending(symbol,price_data,answers):
     debug(f"{symbol} didn't find fresh answer for macd trending up")
 
     try: 
-        macd_data = generate_macd(price_data)
-        macd_data[THREE_DAY_EMA] = macd_data[MACD_LABEL].ewm(span=3,adjust=False).mean()
-        macd_data[FIVE_DAY_EMA] = macd_data[MACD_LABEL].ewm(span=5,adjust=False).mean()
+        macd_data = MACD(price_data[COLUMN_CLOSE])
+        macd_data[THREE_DAY_EMA] = EMA(macd_data[MACD_LABEL],3)
+        macd_data[FIVE_DAY_EMA] = EMA(macd_data[MACD_LABEL],5)
 
         macd_value = get_last_value(macd_data,MACD_LABEL)
         three_day_ema = get_last_value(macd_data,THREE_DAY_EMA)
@@ -418,12 +366,7 @@ def is_macd_uptrending(symbol,price_data,answers):
     if (macd_value > three_day_ema) and (three_day_ema > five_day_ema):
         value = True
 
-    if not QUID_MACD_TRENDING_UP in answers.keys():
-        answers[QUID_MACD_TRENDING_UP] = dict()
-        answers[QUID_MACD_TRENDING_UP][CACHE_QUESTION] = "(automated) Is the MACD trending up?"
-
-    answers[QUID_MACD_TRENDING_UP][CACHE_VALUE] = value
-    answers[QUID_MACD_TRENDING_UP][CACHE_EXPIRATION_TIMESTAMP] = expiration_time
+    store_result(answers,QUID_MACD_TRENDING_UP,value,expiration_time,"(automated) Is the MACD trending up?")
 
     debug(f"{symbol} ({value}) MACD value trending up {macd_value:.2f} > 3dayEMA {three_day_ema:.2f} > 5dayEMA {five_day_ema:.2f}")
     return (value,expiration_time)
@@ -442,24 +385,19 @@ def is_macd_divergence_positive(symbol,price_data,answers):
     debug(f"{symbol} didn't find fresh answer for macd divergence positive")
 
     try: 
-        macd_data = generate_macd(price_data)
-        macd_histogram = get_last_value(macd_data,MACD_DIVERGENCE)
+        macd_data = MACD(price_data[COLUMN_CLOSE])
+        macd_divergence = get_last_value(macd_data,MACD_DIVERGENCE)
         
     except IndexError as e:
         print(f"{symbol} error: {e}")
         return (value,expiration_time)
 
-    if macd_histogram > 0:
+    if macd_divergence > 0:
         value = True
 
-    if not QUID_MACD_DIVERGENCE_POSITIVE in answers.keys():
-        answers[QUID_MACD_DIVERGENCE_POSITIVE] = dict()
-        answers[QUID_MACD_DIVERGENCE_POSITIVE][CACHE_QUESTION] = "(automated) Is the MACD Divergence Positive?"
+    store_result(answers,QUID_MACD_DIVERGENCE_POSITIVE,value,expiration_time,"(automated) Is the MACD Divergence Positive?")
 
-    answers[QUID_MACD_DIVERGENCE_POSITIVE][CACHE_VALUE] = value
-    answers[QUID_MACD_DIVERGENCE_POSITIVE][CACHE_EXPIRATION_TIMESTAMP] = expiration_time
-
-    debug(f"{symbol} ({value}) MACD Divergence {macd_histogram:.2f} > 0")
+    debug(f"{symbol} ({value}) MACD Divergence {macd_divergence:.2f} > 0")
     return (value,expiration_time)
 
 def is_macd_positive(symbol,price_data,answers):
@@ -476,7 +414,7 @@ def is_macd_positive(symbol,price_data,answers):
     debug(f"{symbol} didn't find fresh answer for macd value positive")
 
     try: 
-        macd_data = generate_macd(price_data)
+        macd_data = MACD(price_data[COLUMN_CLOSE])
         macd_value = get_last_value(macd_data,MACD_LABEL)
         
     except IndexError as e:
@@ -486,12 +424,7 @@ def is_macd_positive(symbol,price_data,answers):
     if macd_value > 0:
         value = True
 
-    if not QUID_MACD_POSITIVE_VALUE in answers.keys():
-        answers[QUID_MACD_POSITIVE_VALUE] = dict()
-        answers[QUID_MACD_POSITIVE_VALUE][CACHE_QUESTION] = "(automated) Is the MACD Value Positive?"
-
-    answers[QUID_MACD_POSITIVE_VALUE][CACHE_VALUE] = value
-    answers[QUID_MACD_POSITIVE_VALUE][CACHE_EXPIRATION_TIMESTAMP] = expiration_time
+    store_result(answers,QUID_MACD_POSITIVE_VALUE,value,expiration_time,"(automated) Is the MACD Value Positive?")
 
     debug(f"{symbol} ({value}) MACD value {macd_value:.2f} > 0")
     return (value,expiration_time)
@@ -510,7 +443,7 @@ def is_slow_stochastic_positive(symbol,price_data,answers):
     debug(f"{symbol} didn't find fresh answer for slow stochastic positive")
 
     try: 
-        ss = slow_stochastic_oscillator(price_data)
+        ss = SSO(price_data[COLUMN_CLOSE],price_data[COLUMN_HIGH],price_data[COLUMN_LOW])
         k_val = get_last_value(ss,SS_K)
         d_val = get_last_value(ss,SS_D)
         
@@ -521,12 +454,7 @@ def is_slow_stochastic_positive(symbol,price_data,answers):
     if k_val > d_val:
         value = True
 
-    if not QUID_SLOW_STOCHASTIC_POSITIVE in answers.keys():
-        answers[QUID_SLOW_STOCHASTIC_POSITIVE] = dict()
-        answers[QUID_SLOW_STOCHASTIC_POSITIVE][CACHE_QUESTION] = "(automated) Is the Slow Stochastic Positive?"
-
-    answers[QUID_SLOW_STOCHASTIC_POSITIVE][CACHE_VALUE] = value
-    answers[QUID_SLOW_STOCHASTIC_POSITIVE][CACHE_EXPIRATION_TIMESTAMP] = expiration_time
+    store_result(answers,QUID_SLOW_STOCHASTIC_POSITIVE,value,expiration_time,"(automated) Is the Slow Stochastic Positive?")
 
     debug(f"{symbol} ({value}) slow stochastic %K({k_val:.2f}) > %D({d_val:.2f})")
     return (value,expiration_time)
@@ -545,11 +473,11 @@ def is_slow_stochastic_uptrending(symbol,price_data,answers):
     debug(f"{symbol} didn't find fresh answer for slow stochastic uptrending")
 
     try: 
-        ss = slow_stochastic_oscillator(price_data)
+        ss = SSO(price_data[COLUMN_CLOSE],price_data[COLUMN_HIGH],price_data[COLUMN_LOW])
 
         # Get the 3day and 5day EMA of %K
-        ss[THREE_DAY_EMA] = ss[SS_K].ewm(span=3,adjust=False).mean()
-        ss[FIVE_DAY_EMA] = ss[SS_K].ewm(span=5,adjust=False).mean()
+        ss[THREE_DAY_EMA] = EMA(ss[SS_K],3)
+        ss[FIVE_DAY_EMA] = EMA(ss[SS_K],5)
 
         three_day_ema = get_last_value(ss,THREE_DAY_EMA)
         five_day_ema = get_last_value(ss,FIVE_DAY_EMA)
@@ -561,12 +489,7 @@ def is_slow_stochastic_uptrending(symbol,price_data,answers):
     if three_day_ema > five_day_ema:
         value = True
 
-    if not QUID_SLOW_STOCHASTIC_UPTRENDING in answers.keys():
-        answers[QUID_SLOW_STOCHASTIC_UPTRENDING] = dict()
-        answers[QUID_SLOW_STOCHASTIC_UPTRENDING][CACHE_QUESTION] = "(automated) Is the Slow Stochastic Uptrending?"
-
-    answers[QUID_SLOW_STOCHASTIC_UPTRENDING][CACHE_VALUE] = value
-    answers[QUID_SLOW_STOCHASTIC_UPTRENDING][CACHE_EXPIRATION_TIMESTAMP] = expiration_time
+    store_result(answers,QUID_SLOW_STOCHASTIC_UPTRENDING,value,expiration_time,"(automated) Is the Slow Stochastic Uptrending?")
 
     debug(f"{symbol} ({value}) %K 3dayEMA({three_day_ema:.2f}) > 5dayEMA({five_day_ema:.2f})")
 
@@ -586,7 +509,7 @@ def is_slow_stochastic_above_20(symbol,price_data,answers):
     debug(f"{symbol} didn't find fresh answer for slow stochastic > 20")
 
     try: 
-        ss = slow_stochastic_oscillator(price_data)
+        ss = SSO(price_data[COLUMN_CLOSE],price_data[COLUMN_HIGH],price_data[COLUMN_LOW])
         k = get_last_value(ss,SS_K)
         
     except IndexError as e:
@@ -596,73 +519,11 @@ def is_slow_stochastic_above_20(symbol,price_data,answers):
     if k > 20:
         value = True
 
-    if not QUID_SLOW_STOCHASTIC_ABOVE_20 in answers.keys():
-        answers[QUID_SLOW_STOCHASTIC_ABOVE_20] = dict()
-        answers[QUID_SLOW_STOCHASTIC_ABOVE_20][CACHE_QUESTION] = "(automated) Is the Slow Stochastic Above 20?"
-
-    answers[QUID_SLOW_STOCHASTIC_ABOVE_20][CACHE_VALUE] = value
-    answers[QUID_SLOW_STOCHASTIC_ABOVE_20][CACHE_EXPIRATION_TIMESTAMP] = expiration_time
+    store_result(answers,QUID_SLOW_STOCHASTIC_ABOVE_20,value,expiration_time,"(automated) Is the Slow Stochastic Above 20?")
 
     debug(f"{symbol} ({value}) slow stochastic %K ({k:.2f}) > 20")
 
     return (value,expiration_time)
-
-def on_balance_volume(stock_data):
-    volume_data = pd.DataFrame(stock_data[COLUMN_VOLUME])[OBV_DAYS:]
-    volume_data[COLUMN_CLOSE] = pd.DataFrame(stock_data[COLUMN_CLOSE])[OBV_DAYS:]
-
-    for i, (index, row) in enumerate(volume_data.iterrows()):
-        if i > 0:
-            # Not the first row, so adjust OBV based on the price action
-            prev_obv = volume_data.loc[volume_data.index[i - 1], ON_BALANCE_VOLUME]
-            if row[COLUMN_CLOSE] > volume_data.loc[volume_data.index[i - 1], COLUMN_CLOSE]:
-                # Up day
-                obv = prev_obv + row[COLUMN_VOLUME]
-            elif row[COLUMN_CLOSE] < volume_data.loc[volume_data.index[i - 1], COLUMN_CLOSE]:
-                # Down day
-                obv = prev_obv - row[COLUMN_VOLUME]
-            else:
-                # Equals, so keep the previous OBV value
-                obv = prev_obv
-        else:
-            # First row, set prev_obv to zero
-            obv = row[COLUMN_VOLUME]
-            prev_obv = 0
-
-        # Assign the obv value to the correct row
-        volume_data.at[index, ON_BALANCE_VOLUME] = obv
-
-    return volume_data
-
-def generate_macd(stock_data,long=26,short=12,signal=9):
-    macd = pd.DataFrame(stock_data[COLUMN_CLOSE])
-
-    shortEMA = stock_data[COLUMN_CLOSE].ewm(span=short,adjust=False).mean()
-    longEMA = stock_data[COLUMN_CLOSE].ewm(span=long,adjust=False).mean()
-
-    macd[MACD_LABEL] = shortEMA - longEMA
-    macd[MACD_SIGNAL_LINE] = macd[MACD_LABEL].ewm(span=signal,adjust=False).mean()
-    macd[MACD_DIVERGENCE] = macd[MACD_LABEL] - macd[MACD_SIGNAL_LINE]
-
-    return macd
-
-def slow_stochastic_oscillator(stock_data,period=14,k=3,d=3):
-
-    # Start with the close prices
-    ss = pd.DataFrame(stock_data[COLUMN_CLOSE])
-
-    # Grab the highest high and lowest low for the period
-    ss[SS_PERIOD_LOW] = stock_data[COLUMN_LOW].rolling(window=period).min()
-    ss[SS_PERIOD_HIGH] = stock_data[COLUMN_HIGH].rolling(window=period).max()
-
-    # Calculate the fast %K value
-    ss[SS_FAST_K] = 100*((stock_data[COLUMN_CLOSE] - ss[SS_PERIOD_LOW]) / (ss[SS_PERIOD_HIGH] - ss[SS_PERIOD_LOW]) )
-
-    # Slow %k is 
-    ss[SS_K] = ss[SS_FAST_K].rolling(window=k).mean()
-    ss[SS_D] = ss[SS_K].rolling(window=d).mean()
-
-    return ss
 
 def get_last_value(price_data,column_name):
     return price_data[column_name].iloc[-1]
