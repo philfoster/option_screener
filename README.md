@@ -133,6 +133,7 @@
 	bin/ata.py  -- Automated Technical Analysis, analyzes price trend data and 
 				   updates the cache for the stock screner
 					Requires: pandas, yfinance
+
 		$ bin/ata.py --help
 		usage: ata.py [-h] [-c CONFIG_FILE] [-v] [-s SYMBOL]
 
@@ -143,6 +144,26 @@
 		  -v, --verbose         Increase verbosity
 		  -s SYMBOL, --symbol SYMBOL
 								Analyze a symbol
+
+	bin/bull_call_spread_screener.py  -- Screen for veritical credit spreads
+								that aim to generate significant return and have
+								significant downside protection.
+
+		usage: bull_call_spread_screener.py [-h] [-c CONFIG_FILE] -s SYMBOL
+										[-e EXPIRATION] [-d] [-v] [-p PARAMETERS]
+
+		optional arguments:
+		  -h, --help            show this help message and exit
+		  -c CONFIG_FILE, --config-file CONFIG_FILE
+								etrade configuration file
+		  -s SYMBOL, --symbol SYMBOL
+								Symbol to search
+		  -e EXPIRATION, --expiration EXPIRATION
+								Expiration Date <YYYY-MM-DD>
+		  -d, --debug           Enable debugging
+		  -v, --verbose         Increase verbosity
+		  -p PARAMETERS, --paramaters PARAMETERS
+								Option parameters configuration
 # Configuration
 	etrade.json - this is the base configuration file that points to other configs
 		Example:
@@ -176,4 +197,22 @@
 				"min_downside": 0.0,
 				"min_delta" : 0.45,
 				"max_delta" : 0.90
+			}
+
+	bull_call_spread.json
+		These files contain the parameters for screening the options.
+			min_open_interest - minimum number of options for viability
+			min_annual_roo    - minimum annualized gain return on the option spread
+			min_downside	  - minumum downside protection of the option spread
+			min_short_delta	  - minumum short call delta (roughtly equates to probabilty of success)
+			min_long_delta	  - minimum delta for the long call
+
+			These parameters are set to 5% / month with 7% downside protection and 70% chance of success
+		Example:
+			{
+				"min_open_interest": 10,
+				"min_annual_roo": 0.60,
+				"min_downside": 0.07,
+				"min_short_delta" : 0.70,
+				"min_long_delta" : 0.8
 			}
