@@ -22,7 +22,7 @@
 			"question": "Is the beta low enough?",
 			"type": "beta_filter",
 			"uuid": "c6b74b2e-6966-48a5-932d-419f51d384e7",
-			"beta_max": 2.0,
+			"beta_max": 2.5,
 			"blocker" : true,
 			"expiration_days" : 3
 		},
