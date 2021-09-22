@@ -1,0 +1,7 @@
+{
+	"min_open_interest": 10,
+	"min_annual_roo": 0.60,
+	"min_downside": 0.07,
+	"min_short_delta" : 0.70,
+	"min_long_delta" : 0.8
+}
