@@ -2,7 +2,7 @@
 	This project is meant to provide tools for finding covered call options 
 	that meet specific criteria around goals and market tone.
 
-	The scripts require an API authtoken. When created, the auth token is 
+	The scripts require an E*Trade API authtoken. When created, the auth token is 
 	cached for a period of two hours. If one of the scripts uses the auth
 	token it is refreshed (a maximum of one refresh per five minutes). If
 	no valid auth token exists, you'll be given a URL to paste into a 
@@ -20,6 +20,12 @@
 
 	Additionally, this module requires an active E*Trade account and an
 	API key (available from E*Trade customer service)
+
+	ata.py requires stock_chart_tools package from pypi for calculating
+	the technicals indicators like macd, obv, slow stochastics and 
+	exponential moving averages.
+	https://pypi.org/project/stock-chart-tools/0.1.0/
+	https://github.com/philfoster/stock_chart_tools
 
 # scripts and tools
 	bin/get_quote.py  -- Get a real time quote for a symbol
