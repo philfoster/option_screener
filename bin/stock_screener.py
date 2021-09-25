@@ -393,7 +393,7 @@ def ask_question_earnings(answer_file,symbol,section,question):
 if __name__ == "__main__":
     # Setup the argument parsing
     parser = argparse.ArgumentParser()
-    parser.add_argument('-c','--config-file', dest='config_file', help="etrade configuration file", default=DEFAULT_SCREENER_CONFIG_FILE)
+    parser.add_argument('-c','--config-file', dest='config_file', help="screener configuration file", default=DEFAULT_SCREENER_CONFIG_FILE)
     parser.add_argument('-v','--verbose', dest='verbose', required=False,default=False,action='store_true',help="Increase verbosity")
     parser.add_argument('-q','--quote', dest='summary_quote', required=False,default=False,action='store_true',help="Include a quote in the summary")
     parser.add_argument('-o','--output', dest='output_file', required=False,default=None,help="Write the results to a file")
