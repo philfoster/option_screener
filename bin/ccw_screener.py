@@ -31,10 +31,11 @@ global GLOBAL_VERBOSE
 def main(config_file,screener_config_file,market_tone_config,symbol_list,expiration,output_file):
     count = 0
     fh = None
+    screener_config = read_json_file(screener_config_file)
     if output_file:
         try:
             fh = open(output_file,"w")
-            fh.write("Symbol,Sector,Option,Days,Price,Premium,Mark,Total Cost,Open Interest,Beta,Put/Call Ratio,Max Pain,Downside Protection(%),Delta,Return On Option(%),ROO Annualized(%),Profit($),Upside Potential(%),Upside Annualize(%),Upside Profit($),Total Gain(%),Total Annualized(%),Total Profit($)" + "\n")
+            fh.write("Symbol,Company Name,Sector,Score,Option,Days,Price,Premium,Mark,Total Cost,Open Interest,Beta,Put/Call Ratio,Max Pain,Downside Protection(%),Delta,Return On Option(%),ROO Annualized(%),Profit($),Upside Potential(%),Upside Annualize(%),Upside Profit($),Total Gain(%),Total Annualized(%),Total Profit($)" + "\n")
         except (PermissionError, IOError) as e:
             print(f"Error: could not open {output_file} for writing: {e}")
             sys.exit(1)
@@ -56,7 +57,9 @@ def main(config_file,screener_config_file,market_tone_config,symbol_list,expirat
 
             if output_file:
                 fh.write(f"{symbol.upper()}," + 
+                    '"' + f"{cco.get('company_name')}" + '",' +
                     '"' + f"{cco.get('sector')}" + '",' +
+                    f"{get_score(screener_config,symbol)},"+
                     '"' + f"{cco.get('display_symbol')}" +'",' +
                     f"{cco.get('days')},"+
                     f"{cco.get('stock_price'):.2f}," +
@@ -230,7 +233,8 @@ def find_covered_calls(config_file,screener_config_file,market_tone_config,symbo
             "total_gain" : total_gain * 100,
             "total_annual" : total_annual * 100,
             "total_profit" : total_profit * 100,
-            "sector" : quote.get_sector()
+            "sector" : quote.get_sector(),
+            "company_name" : quote.get_company_name()
         }
 
         option_list.append(matching_call)
