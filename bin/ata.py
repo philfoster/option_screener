@@ -46,8 +46,12 @@ global GLOBAL_VERBOSE
 
 def main(screener_config,questions):
     symbols = get_symbols(screener_config.get(SYMBOLS_DIR))
+    count = 0
     for symbol in sorted(symbols):
         analyze_symbol(screener_config,questions,symbol)
+        count += 1
+    if count == 0:
+        print(f"no symbols found in {screener_config.get(SYMBOLS_DIR)}")
 
 def analyze_symbol(screener_config,questions,symbol):
     print(f"analyzing symbol {symbol}")

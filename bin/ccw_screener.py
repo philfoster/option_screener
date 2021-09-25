@@ -27,8 +27,12 @@ def main(config_file,market_tone_config,symbol,expiration,debug,verbose):
     # Get the market tone config
     tone_config = read_json_file(market_tone_config)
 
-    # Get a Market object
-    option_chain = get_option_chain(config_file, symbol, expiration)
+    # Get the option chain
+    try:
+        option_chain = get_option_chain(config_file, symbol, expiration)
+    except OptionChainNotFoundError as e:
+        print(f"{symbol} No option chain found for {expiration}")
+        return
 
     # Get the most recent quote
     quote = get_quote(config_file, symbol)
@@ -157,7 +161,7 @@ def main(config_file,market_tone_config,symbol,expiration,debug,verbose):
             print(f"{call.get_display_symbol()}: price={stock_price} days={days} roo={100*roo:.2f}%({100*roo_annual:0.2f}%) downside={100*downside_protection:.2f}% upside={100*upside:.2f}%({100*upside_annual:.2f}%) total={100*total_gain:.2f}%({100*total_annual:.2f}%)")
 
     if count == 0:
-        print("No matching options found")
+        print(f"{symbol} No matching options found")
 
 if __name__ == "__main__":
     # Setup the argument parsing

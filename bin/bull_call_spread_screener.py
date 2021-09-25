@@ -20,8 +20,12 @@ def main(config_file,option_parameters_file,symbol,expiration):
     # Get the market tone config
     option_parameters = read_json_file(option_parameters_file)
 
-    # Get a Market object
-    option_chain = get_option_chain(config_file, symbol, expiration)
+    # Get the option chain
+    try:
+        option_chain = get_option_chain(config_file, symbol, expiration)
+    except OptionChainNotFoundError as e:
+        print(f"{symbol} No option chain found for {expiration}")
+        return
 
     # Get the most recent quote
     quote = get_quote(config_file, symbol)

@@ -120,7 +120,7 @@ def get_questions(questions_dir):
 
 def get_symbols(symbols_dir):
     symbols = set()
-    for file in glob.glob(f"{symbols_dir}/*"):
+    for file in glob.glob(f"{expanduser(symbols_dir)}/*"):
         with open(file,"r") as f:
             for line in f.readlines():
                 for token in line.rstrip().split():
