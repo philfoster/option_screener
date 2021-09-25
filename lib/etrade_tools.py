@@ -264,6 +264,7 @@ class Quote():
 
         # TODO - yield, dividend, ex-date, div pay date(epoch seconds), p/e ratio, eps, estEarning, 
         # TODO - after hours data (price, bid, ask, volume, change%)
+        self._sector = "unknown"
         if screener_config:
             self._sector = get_sector_from_cache(screener_config,self._symbol)
 
