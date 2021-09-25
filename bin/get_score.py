@@ -3,7 +3,7 @@
 import argparse
 from screener_tools import *
 
-DEFAULT_SCREENER_CONFIG_FILE="stock_screener.json"
+DEFAULT_SCREENER_CONFIG_FILE="./etc/stock_screener.json"
 
 def main(screener_config_file,symbol):
     screener_config = read_json_file(screener_config_file)

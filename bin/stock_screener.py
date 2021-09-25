@@ -8,7 +8,7 @@ import re
 import sys
 from etrade_tools import *
 
-DEFAULT_SCREENER_CONFIG_FILE="stock_screener.json"
+DEFAULT_SCREENER_CONFIG_FILE="./etc/stock_screener.json"
 
 # Globals
 global GLOBAL_VERBOSE

@@ -3,7 +3,7 @@
 import argparse
 from etrade_tools import *
 
-DEFAULT_CONFIG_FILE="etrade.json"
+DEFAULT_CONFIG_FILE="./etc/etrade.json"
 
 def main(config_file,symbol):
     # Get a Market object

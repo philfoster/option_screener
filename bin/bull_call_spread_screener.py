@@ -4,8 +4,8 @@ import argparse
 import datetime
 from etrade_tools import *
 
-DEFAULT_CONFIG_FILE="etrade.json"
-DEFAULT_PARAMS_FILE="bull_call_spread.json"
+DEFAULT_CONFIG_FILE="./etc/etrade.json"
+DEFAULT_PARAMS_FILE="./etc/bull_call_spread.json"
 
 DEFAULT_MIN_OPEN_INTEREST=25
 DEFAULT_MIN_ANNUAL_ROO=0.4

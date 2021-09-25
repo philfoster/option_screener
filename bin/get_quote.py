@@ -3,8 +3,8 @@
 import argparse
 from etrade_tools import *
 
-DEFAULT_CONFIG_FILE="etrade.json"
-DEFAULT_SCREENER_CONFIG_FILE="stock_screener.json"
+DEFAULT_CONFIG_FILE="./etc/etrade.json"
+DEFAULT_SCREENER_CONFIG_FILE="./etc/stock_screener.json"
 
 def main(config_file,screener_config_file,symbol,verbose):
     # Get a Market object

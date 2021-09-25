@@ -11,7 +11,7 @@ from etrade_tools import *
 from stock_chart_tools.utils import get_historical_data, EMA, OBV, SSO, MACD
 from stock_chart_tools.utils import COLUMN_CLOSE, COLUMN_VOLUME, COLUMN_HIGH, COLUMN_LOW, MACD_DIVERGENCE, MACD_LABEL, OBV_LABEL, SS_K, SS_D
 
-DEFAULT_SCREENER_CONFIG_FILE="stock_screener.json"
+DEFAULT_SCREENER_CONFIG_FILE="./etc/stock_screener.json"
 
 # Questions (technicals)
 QUID_PRICE_TRENDING_UP="9a21bbe0-3971-48e2-a84f-e09fa871a916"

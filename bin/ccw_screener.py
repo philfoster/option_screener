@@ -5,8 +5,8 @@ import datetime
 import sys
 from etrade_tools import *
 
-DEFAULT_CONFIG_FILE="etrade.json"
-DEFAULT_SCREENER_CONFIG="stock_screener.json"
+DEFAULT_CONFIG_FILE="./etc/etrade.json"
+DEFAULT_SCREENER_CONFIG="./etc/stock_screener.json"
 DEFAULT_TONE_FILE="tone/market-neutral.json"
 
 DEFAULT_MIN_OPEN_INTEREST=25
