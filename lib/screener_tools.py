@@ -130,3 +130,22 @@ def get_symbols(symbols_dir):
 def get_current_timestamp():
     return int(datetime.datetime.now().timestamp())
 
+def get_score(screener_config,symbol):
+    answer_file = get_answer_file(screener_config.get(CACHE_DIR),symbol)
+    if not os.path.exists(expanduser(answer_file)):
+        print(f"no data found for {symbol}")
+
+    answers = get_all_answers_from_cache(answer_file)
+
+    total_count = 0
+    true_count = 0
+    for key in answers:
+        answer = answers.get(key)
+        if isinstance(answer,dict):
+            value = answer.get(CACHE_VALUE)
+            if isinstance(value,bool):
+                total_count += 1
+                if value:
+                    true_count += 1
+                
+    return 100 * float(true_count / total_count)
