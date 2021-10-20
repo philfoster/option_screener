@@ -365,12 +365,18 @@ def ask_question_boolean(answer_file,symbol,section,question):
 
 def ask_question_earnings(answer_file,symbol,section,question):
     # Get the boolean from cache and return it
+    next_monthly = get_next_monthly_expiration()
+
     (value,expiration_timestamp) = get_answer_from_cache(answer_file,symbol,question)
     if value is not None:
-        return (value,expiration_timestamp)
+        earnings_date = datetime.datetime.fromtimestamp(expiration_timestamp)
+        if earnings_date < next_monthly:
+            debug(f"(cached) earnings date {earnings_date} is before next_monthly={next_monthly}")
+            return (False,expiration_timestamp)
+        debug(f"(cached) earnings date {earnings_date} is after next_monthly={next_monthly}")
+        return (True,expiration_timestamp)
 
     text = question.get(QUESTION_TEXT)
-    next_monthly = get_next_monthly_expiration()
 
     while True:
         value = input(f"\t{symbol}[{section}] {text} (YYYY-MM-DD): ")
@@ -382,7 +388,7 @@ def ask_question_earnings(answer_file,symbol,section,question):
 
             earnings_date = datetime.datetime(year,month,day,0,00,1)
             if earnings_date < next_monthly:
-                print(f"earnings date {earnings_date} is before next_monthly={next_monthly}")
+                debug(f"earnings date {earnings_date} is before next_monthly={next_monthly}")
                 return (False,int(earnings_date.timestamp() + (86400*3)))
             else:
                 debug(f"earnings date {earnings_date} is after next_monthly={next_monthly}")
