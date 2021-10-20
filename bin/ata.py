@@ -32,6 +32,8 @@ QUID_SLOW_STOCHASTIC_ABOVE_20="0122c7e7-bc9c-4879-8492-e8f9f7e25940"
 FRESHNESS_DAYS=1
 ONE_DAY = 24 * 60 * 60
 
+CACHE_FRESHNESS_SECONDS=60*60 * 2
+
 # Columns
 THREE_DAY_EMA="3dayEMA"
 FIVE_DAY_EMA="5dayEMA"
@@ -58,7 +60,7 @@ def analyze_symbol(screener_config,questions,symbol):
     answer_file = get_answer_file(screener_config.get(CACHE_DIR),symbol)
     answers = get_all_answers_from_cache(answer_file)
 
-    price_data = get_one_year_data(symbol)
+    price_data = get_one_year_data(symbol,screener_config.get(CACHE_DIR))
 
     (value,timestamp) = is_price_uptrending(symbol,price_data,answers)
     (value,timestamp) = is_price_above_20dayEMA(symbol,price_data,answers)
@@ -77,7 +79,38 @@ def analyze_symbol(screener_config,questions,symbol):
 
     cache_answers(answer_file,answers)
 
-def get_one_year_data(symbol):
+def get_cache_filename(symbol,cache_dir):
+    return os.path.join(expanduser(cache_dir),f"{symbol}.year.cache")
+
+def get_cached_historical_data(symbol,cache_dir):
+    filename = get_cache_filename(symbol,cache_dir)
+    try:
+        print(f"trying to get the cached data")
+        file_mtime = os.path.getmtime(filename)
+        if (time.time() - file_mtime) < CACHE_FRESHNESS_SECONDS:
+            data = pd.read_csv(filename,index_col=0)
+            return data
+        else:
+            print(f"{filename} cache is not fresh enough")
+    except Exception as e:
+        debug(f"could not read cache {filename}: {e}")
+
+    return None
+
+def cache_historical_data(symbol,cache_dir,price_data):
+    filename = get_cache_filename(symbol,cache_dir)
+    price_data.to_csv(filename)
+
+def get_one_year_data(symbol,cache_dir):
+
+    # Try to get the price data from cache
+    price_data = get_cached_historical_data(symbol,cache_dir)
+    if price_data is not None:
+        debug(f"{symbol} returning historical data from cache")
+        return price_data
+
+    # Nothing fresh in the cache
+    debug(f"{symbol} getting historical data from API")
     price_data = get_historical_data(symbol)
 
     price_data[THREE_DAY_EMA] = EMA(price_data[COLUMN_CLOSE],3)
@@ -88,6 +121,8 @@ def get_one_year_data(symbol):
 
     price_data[VOL_THREE_DAY] = EMA(price_data[COLUMN_VOLUME],3)
     price_data[VOL_TWENTY_DAY] = EMA(price_data[COLUMN_VOLUME],20)
+
+    cache_historical_data(symbol,cache_dir,price_data)
 
     return price_data
 
