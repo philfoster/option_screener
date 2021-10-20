@@ -256,7 +256,7 @@ def get_symbols_from_results_file(results_file):
                 if line.startswith("Symbol"):
                     continue
                 symbol = line.split(",")[0]
-                symbols.append(symbol)
+                symbols.append(symbol.strip())
                 
     except IOError as e:
         print(f"Error reading '{results_file}': {e}")

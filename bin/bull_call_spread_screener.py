@@ -167,7 +167,7 @@ def get_bull_call_spreads(config_file,screener_config,option_parameters,symbol,e
                 print(f"\tProtection: {100*downside_protection:10.2f}%")
                 print()
             else:
-                print(f"{symbol} long call: {long_call_strike_price} short call : {short_call_strike_price}: downside protection {100 * downside_protection:.2f}% annualized roo {100 * roo_annualized:.2f}%")
+                print(f"{symbol} long call: {long_call_strike_price} short call : {short_call_strike_price}: downside protection {100 * downside_protection:.2f}% annualized roo {100 * roo_annualized:.2f}% profit=${100*theta_spread:.2f} cost=${cost:.2f}")
 
             matching_call_spread = {
                 "days" : days,
