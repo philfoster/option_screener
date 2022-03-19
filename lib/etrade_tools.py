@@ -405,6 +405,8 @@ class OptionChain():
         return self._put_options.get(strike)
 
     def get_put_call_ratio(self):
+        if float(self._call_open_interest) == 0:
+            return 99.99
         return float(self._put_open_interest) / float(self._call_open_interest)
 
     def _calculate_max_pain(self):

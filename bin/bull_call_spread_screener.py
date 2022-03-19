@@ -147,7 +147,9 @@ def get_bull_call_spreads(config_file,screener_config,option_parameters,symbol,e
 
             cost = 100 * (long_call_ask - short_call_bid)
 
-            return_on_spread = (100 * theta_spread) / cost
+            return_on_spread = 0
+            if cost > 0:
+                return_on_spread = (100 * theta_spread) / cost
             roo_annualized = (365/days) * return_on_spread
 
             if roo_annualized < min_annual_roo:

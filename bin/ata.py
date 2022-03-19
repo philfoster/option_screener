@@ -50,8 +50,12 @@ def main(screener_config,questions):
     symbols = get_symbols(screener_config.get(SYMBOLS_DIR))
     count = 0
     for symbol in sorted(symbols):
-        analyze_symbol(screener_config,questions,symbol)
-        count += 1
+        try:
+            analyze_symbol(screener_config,questions,symbol)
+            count += 1
+        except KeyError as e:
+            print(f"Error: failed to analyze {symbol}: {e}")
+            
     if count == 0:
         print(f"no symbols found in {screener_config.get(SYMBOLS_DIR)}")
 
@@ -163,7 +167,7 @@ def is_price_uptrending(symbol,price_data,answers):
         three_day_ema = get_last_value(price_data,THREE_DAY_EMA)
         five_day_ema = get_last_value(price_data,FIVE_DAY_EMA)
         nine_day_ema = get_last_value(price_data,NINE_DAY_EMA)
-    except IndexError as e:
+    except (KeyError, IndexError) as e:
         print(f"{symbol} error: {e}")
         return (value,expiration_time)
 
