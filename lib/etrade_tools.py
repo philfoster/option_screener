@@ -78,6 +78,10 @@ def get_next_monthly_expiration():
             return get_third_friday(now.year+1,1)
         
 def get_third_friday(year,month):
+    # Special case the year
+    if year == 2022 and month == 4:
+        return datetime.datetime(2022,4,14,23,59,59)
+
     first = datetime.datetime(year,month,1)
     WEEKDAY_SATURDAY = 5
     if first.weekday() < WEEKDAY_SATURDAY:
