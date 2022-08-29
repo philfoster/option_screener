@@ -64,6 +64,13 @@ def get_option_chain(config_file, symbol, expiration_date):
         raise OptionChainNotFoundError(f"could not find option chain for {expiration_date}")
     return option_chain
 
+def get_options_expiration_dates(config_file, symbol):
+    authtoken_data = _get_authtoken(config_file)
+    market = _get_market(authtoken_data)
+    dates = None
+    dates = market.get_option_expire_date(symbol,resp_format='json')
+    return dates
+
 def get_next_monthly_expiration():
     """ Returns a datetime object for the options expiration date"""
     now = datetime.datetime.now()
@@ -265,8 +272,10 @@ class Quote():
         self._beta = float(self._quote_data.get("QuoteResponse").get("QuoteData")[0].get("All").get("beta"))
         self._market_cap = int(self._quote_data.get("QuoteResponse").get("QuoteData")[0].get("All").get("marketCap"))
         self._float = int(self._quote_data.get("QuoteResponse").get("QuoteData")[0].get("All").get("sharesOutstanding"))
+        self._ex_date = int(self._quote_data.get("QuoteResponse").get("QuoteData")[0].get("All").get("exDividendDate"))
+        self._dividend = float(self._quote_data.get("QuoteResponse").get("QuoteData")[0].get("All").get("dividend"))
 
-        # TODO - yield, dividend, ex-date, div pay date(epoch seconds), p/e ratio, eps, estEarning, 
+        # TODO - yield, div pay date(epoch seconds), p/e ratio, eps, estEarning, 
         # TODO - after hours data (price, bid, ask, volume, change%)
         self._sector = "unknown"
         if screener_config:
@@ -349,6 +358,12 @@ class Quote():
     def get_52week_low_date(self):
         d = self._52week_low_date
         return f"{d.year}-{d.month:02d}-{d.day:02d}"
+
+    def get_exdate(self):
+        return datetime.datetime.fromtimestamp(self._ex_date)
+
+    def get_dividend(self):
+        return self._dividend
 
 
 class OptionChain():
