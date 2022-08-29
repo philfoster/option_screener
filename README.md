@@ -170,6 +170,28 @@
 		  -v, --verbose         Increase verbosity
 		  -p PARAMETERS, --paramaters PARAMETERS
 								Option parameters configuration
+
+	bin/find_roll_outs.py -- Look for options that you can roll out to if you
+							 	are holding an option that is in the money
+								near the expiration date.
+
+
+		usage: find_roll_outs.py [-h] [-c CONFIG_FILE] -s SYMBOL -e EXPIRATION -p
+								 STRIKE [-v]
+
+		optional arguments:
+		  -h, --help            show this help message and exit
+		  -c CONFIG_FILE, --config-file CONFIG_FILE
+								etrade configuration file
+		  -s SYMBOL, --symbol SYMBOL
+								Symbol of the call
+		  -e EXPIRATION, --expiration EXPIRATION
+								Expiration Date <YYYY-MM-DD>
+								Symbol to search
+		  -p STRIKE, --strike-price STRIKE
+								Strike price
+		  -v, --verbose         Increase verbosity
+
 # Configuration
 	etrade.json - this is the base configuration file that points to other configs
 		Example:
