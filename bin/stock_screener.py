@@ -10,6 +10,8 @@ from etrade_tools import *
 
 DEFAULT_SCREENER_CONFIG_FILE="./etc/stock_screener.json"
 
+QUID_EARNINGS_DATE="409a6708-7045-4df2-a705-c238980e7cf1"
+
 # Globals
 global GLOBAL_VERBOSE
 global GLOBAL_QUOTE_CACHE
@@ -53,7 +55,7 @@ def main(screener_config_file,summary_quote,output_file):
         try:
             with open(output_file,"w") as of:
                 if summary_quote:
-                    of.write(f"Symbol,Score,Price,Sector\n")
+                    of.write(f"Symbol,Score,Price,Sector,EarningsDate\n")
                 else:
                     of.write(f"Symbol,Score\n")
                 for symbol in passing.keys():
@@ -61,7 +63,8 @@ def main(screener_config_file,summary_quote,output_file):
                     
                     if summary_quote:
                         quote = stock_quote(screener_config, symbol)
-                        of.write(f"{symbol},{score:.2f},${quote.get_price():.2f},{quote.get_sector()}\n")
+                        earnings_date = get_earnings_date(screener_config,symbol)
+                        of.write(f"{symbol},{score:.2f},${quote.get_price():.2f},{quote.get_sector()},{earnings_date}\n")
                     else:
                         of.write(f"{symbol},{score:.2f}\n")
         except OSError as e:
@@ -362,6 +365,20 @@ def ask_question_boolean(answer_file,symbol,section,question):
         return(True,get_current_timestamp() + (86400 * question.get(QUESTION_EXPIRATION_DAYS,0)))
     else:
         return(False,get_current_timestamp() + (86400 * question.get(QUESTION_EXPIRATION_DAYS,0)))
+
+def get_earnings_date(screener_config,symbol):
+    answer_file = get_answer_file(screener_config.get(CACHE_DIR),symbol)
+    questions = get_questions(screener_config.get(QUESTIONS_DIR))
+    earnings_question = None
+    for section in sorted(questions.keys()):
+        for question in questions[section].get(QUESTION_LIST):
+            question_id = question.get(QUESTION_ID)
+            if question_id == QUID_EARNINGS_DATE:
+                earnings_question = question
+
+    (value,expiration_timestamp) = get_answer_from_cache(answer_file,symbol,earnings_question)
+    earnings_date = datetime.datetime.fromtimestamp(expiration_timestamp - (86400*3))
+    return earnings_date.strftime("%Y-%m-%d")
 
 def ask_question_earnings(answer_file,symbol,section,question):
     # Get the boolean from cache and return it
