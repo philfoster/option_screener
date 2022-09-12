@@ -1,9 +1,11 @@
 import pyetrade
-import json
-import time
+
 import datetime
+import json
 from os.path import expanduser
+import re
 from screener_tools import *
+import time
 
 PROPERTIES_CREDENTIALS_FILE="credentials"
 PROPERTIES_AUTHTOKEN_FILE="authtoken"
@@ -24,6 +26,9 @@ class OptionChainNotFoundError(Exception):
     pass
 
 class SymbolNotFoundError(Exception):
+    pass
+
+class AccountCreationException(Exception):
     pass
 
 ################################################################################
@@ -50,7 +55,7 @@ def get_quote_data(config_file, symbol):
     """ takes in an etrade json config file and a symbol, returns the quote data as a json object """
     authtoken_data = _get_authtoken(config_file)
     market = _get_market(authtoken_data)
-    return market.get_quote([symbol],resp_format='json')
+    return market.get_quote([symbol], detail_flag="all", require_earnings_date=True, resp_format='json')
 
 def get_option_chain(config_file, symbol, expiration_date):
     """ takes in an etrade json config file and a symbol and an expiration date
@@ -120,6 +125,25 @@ def renew_authtoken(config_file,force_renew):
         return
     return
 
+def get_account_list(config_file):
+    authtoken_data = _get_authtoken(config_file)
+    etrade_account = _get_etrade_account(authtoken_data)
+    account_data = etrade_account.list_accounts(resp_format='json')
+    account_list = AccountList(etrade_account, account_data)
+    return account_list
+
+def get_portfolio(config_file, acc_obj):
+    portfolio = None
+    authtoken_data = _get_authtoken(config_file)
+    etrade_account = _get_etrade_account(authtoken_data)
+    try:
+        portfolio = etrade_account.get_account_portfolio(acc_obj.get_key(), resp_format='json')
+    except Exception as e:
+        print(f"unable to get portfolio data for {acc_obj.get_display_name()}: {e}")
+
+    return portfolio
+        
+
 ################################################################################
 # Private methods
 ################################################################################
@@ -137,6 +161,14 @@ def _read_etrade_json(config_file):
 def _get_market(authtoken_data):
     """ Create a market object from the authtoken data """
     return pyetrade.ETradeMarket( 
+            authtoken_data.get(PROPERTIES_CONSUMER_KEY,None), 
+            authtoken_data.get(PROPERTIES_CONSUMER_SECRET,None), 
+            authtoken_data.get(PROPERTIES_OAUTH_TOKEN,None), 
+            authtoken_data.get(PROPERTIES_OAUTH_TOKEN_SECRET,None), 
+            dev=authtoken_data.get(PROPERTIES_SANDBOX,True)) 
+
+def _get_etrade_account(authtoken_data):
+    return pyetrade.ETradeAccounts( 
             authtoken_data.get(PROPERTIES_CONSUMER_KEY,None), 
             authtoken_data.get(PROPERTIES_CONSUMER_SECRET,None), 
             authtoken_data.get(PROPERTIES_OAUTH_TOKEN,None), 
@@ -244,7 +276,165 @@ def _get_authtoken(config_file):
     renew_authtoken(config_file,False)
     return authtoken_data
 
+class AccountList:
+    def __init__(self, etrade_account, account_data):
+        self._accounts = dict()
+
+        for acc_data in account_data.get("AccountListResponse").get("Accounts").get("Account"):
+            try:
+                acc_obj = Account(
+                    etrade_account,
+                    acc_data.get("accountId"),
+                    acc_data.get("accountIdKey"),
+                    acc_data.get("accountName"),
+                    acc_data.get("accountType"),
+                    acc_data.get("accountDesc")
+                )
+                self._accounts[acc_data.get("accountId")] = acc_obj
+            except AccountCreationException:
+                continue
+
+    def get_accounts(self):
+        return self._accounts.values()
+
+    def get_account_ids(self):
+        return self._accounts.keys()
+
+    def get_account_names(self):
+        account_names = list()
+        for acc_obj in self._accounts.values():
+            account_names.append(acc_obj.get_display_name())
+
+        return sorted(account_names)
+
+    def get_account(self, acc_id):
+        return self._accounts.get(acc_id,None)
+
+    def get_account_by_name(self, name):
+        for acc_obj in self._accounts.values():
+            if acc_obj.get_name() == name:
+                return acc_obj
+
+class Account:
+    def __init__(self, etrade_account, account_id, account_key, account_name, account_type, description):
+
+        if account_id is None or account_key is None:
+            raise AccountCreationException
+        self._id = account_id
+        self._key = account_key
+        self._desc = description
+
+        self._name = account_name
+
+        if account_name == " ":
+            self._name = description
+
+        self._type = account_type
+
+        try:
+            self._portfolio_data = etrade_account.get_account_portfolio(account_key, resp_format='json')
+        except Exception as e:
+            #print(f"ERROR: could not get portfolio data for {self._name}: {e}")
+            raise AccountCreationException
+
+        self._positions = PortfolioPositions(self._portfolio_data)
+
+    def get_id(self):
+        return self._id
+
+    def get_key(self):
+        return self._key
+
+    def get_description(self):
+        return self._desc
+
+    def get_name(self):
+        return self._name
+
+    def get_display_name(self):
+        return f"{self.get_name()} ({self.get_id()})"
+
+    def _get_portfolio(self):
+        return self._portfolio_data
+
+    def get_positions(self):
+        return self._positions.get_positions()
+
+class PortfolioPositions:
+    _TYPE_EQUITY = "EQ"
+    _TYPE_OPTION = "OPTN"
+    _SUBTYPE_ETF = "ETF"
+    _OPTION_TYPE_CALL = "CALL"
+    _OPTION_TYPE_PUT = "PUT"
+
+    def __init__(self, portfolio_data):
+        self._positions = dict()
+
+        for p in portfolio_data.get("PortfolioResponse").get("AccountPortfolio")[0].get("Position"):
+            p_type = p.get("Product").get("securityType")
+            p_subtype = p.get("Product").get("securitySubType")
+
+            p_obj = None
+            if p_type == self._TYPE_EQUITY:
+                if p_subtype == self._SUBTYPE_ETF:
+                    p_obj = EtfPosition(p)
+                else:
+                    p_obj = EquityPosition(p)
+            elif p_type == self._TYPE_OPTION:
+                o_type = p.get("Product").get("callPut")
+                if o_type == self._OPTION_TYPE_CALL:
+                    p_obj = CallOptionPosition(p)
+                elif o_type == self._OPTION_TYPE_PUT:
+                    p_obj = PutOptionPosition(p)
+
+            if p_obj:
+                self._positions[p_obj.get_id()] = p_obj
+
+    def get_positions(self):
+        return self._positions.values()
+                
+class Position:
+    def __init__(self, position_data):
+        self._position_data = position_data
+        self._id = position_data.get("positionId")
+        self._display_name = position_data.get("symbolDescription")
+        self._quantity = position_data.get("quantity")
+
+    def _get_position_data(self):
+        return self._position_data
+
+    def get_id(self):
+        return self._id
+
+    def get_display_name(self):
+        return self._display_name
+
+    def get_quantity(self):
+        return self._quantity
+
+class EquityPosition(Position):
+    def __init__(self, position_data):
+        super().__init__(position_data)
+
+class EtfPosition(EquityPosition):
+    def __init__(self, position_data):
+        super().__init__(position_data)
+
+class OptionPosition(Position):
+    def __init__(self, position_data):
+        super().__init__(position_data)
+
+class CallOptionPosition(OptionPosition):
+    def __init__(self, position_data):
+        super().__init__(position_data)
+
+class PutOptionPosition(OptionPosition):
+    def __init__(self, position_data):
+        super().__init__(position_data)
+
 class Quote():
+    # Three months in seconds to be added to earnings dates that are before today
+    _THREE_MONTHS = 90 * 24 * 60 * 60
     def __init__(self,quote_data,screener_config=None):
         self._quote_data = quote_data
 
@@ -274,6 +464,13 @@ class Quote():
         self._float = int(self._quote_data.get("QuoteResponse").get("QuoteData")[0].get("All").get("sharesOutstanding"))
         self._ex_date = int(self._quote_data.get("QuoteResponse").get("QuoteData")[0].get("All").get("exDividendDate"))
         self._dividend = float(self._quote_data.get("QuoteResponse").get("QuoteData")[0].get("All").get("dividend"))
+
+        earnings_date = self._quote_data.get("QuoteResponse").get("QuoteData")[0].get("All").get("nextEarningDate")
+        (month, day, year) = earnings_date.split("/")
+            
+        self._next_earnings_date = datetime.datetime(year=int(year),month=int(month),day=int(day))
+        if self._next_earnings_date < datetime.datetime.now():
+            self._next_earnings_date = datetime.datetime.fromtimestamp(self._next_earnings_date.timestamp() + self._THREE_MONTHS)
 
         # TODO - yield, div pay date(epoch seconds), p/e ratio, eps, estEarning, 
         # TODO - after hours data (price, bid, ask, volume, change%)
@@ -364,6 +561,9 @@ class Quote():
 
     def get_dividend(self):
         return self._dividend
+
+    def get_next_earnings_date(self):
+        return self._next_earnings_date
 
 
 class OptionChain():

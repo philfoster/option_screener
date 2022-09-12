@@ -342,7 +342,7 @@ def ask_question(screener_config,answer_file,symbol,section,question):
     elif question_type == TYPE_BETA:
         return check_beta(screener_config,answer_file,symbol,section,question)
     elif question_type == TYPE_EARNINGS:
-        return ask_question_earnings(answer_file,symbol,section,question)
+        return ask_question_earnings(screener_config,answer_file,symbol,section,question)
     elif question_type == TYPE_SECTOR:
         return ask_question_sector(answer_file,symbol,section,question)
     elif question_type == TYPE_OPEN_INTEREST:
@@ -380,7 +380,7 @@ def get_earnings_date(screener_config,symbol):
     earnings_date = datetime.datetime.fromtimestamp(expiration_timestamp - (86400*3))
     return earnings_date.strftime("%Y-%m-%d")
 
-def ask_question_earnings(answer_file,symbol,section,question):
+def ask_question_earnings(screener_config, answer_file, symbol, section, question):
     # Get the boolean from cache and return it
     next_monthly = get_next_monthly_expiration()
 
@@ -393,25 +393,22 @@ def ask_question_earnings(answer_file,symbol,section,question):
         debug(f"(cached) earnings date {earnings_date} is after next_monthly={next_monthly}")
         return (True,expiration_timestamp)
 
-    text = question.get(QUESTION_TEXT)
+    quote = stock_quote(screener_config, symbol)
 
-    while True:
-        value = input(f"\t{symbol}[{section}] {text} (YYYY-MM-DD): ")
-        match = re.search(r'^\s*(\d\d\d\d)-(\d\d)-(\d\d)\s*$',value)
-        if match:
-            year = int(match.group(1))
-            month = int(match.group(2))
-            day = int(match.group(3))
+    earnings_date = quote.get_next_earnings_date()
 
-            earnings_date = datetime.datetime(year,month,day,0,00,1)
-            if earnings_date < next_monthly:
-                debug(f"earnings date {earnings_date} is before next_monthly={next_monthly}")
-                return (False,int(earnings_date.timestamp() + (86400*3)))
-            else:
-                debug(f"earnings date {earnings_date} is after next_monthly={next_monthly}")
-                return (True,int(earnings_date.timestamp() + (86400*3)))
+    time.sleep(2)
+    if earnings_date:
+        if earnings_date < next_monthly:
+            debug(f"earnings date {earnings_date} is before next_monthly={next_monthly}")
+            return(False,int(get_current_timestamp() + (86400 * question.get(QUESTION_EXPIRATION_DAYS,0))))
         else:
-            print("\n*** format error, try again MMMM-YY-DD***")
+            debug(f"earnings date {earnings_date} is after next_monthly={next_monthly}")
+            return (True,int(get_current_timestamp() + (86400 * question.get(QUESTION_EXPIRATION_DAYS,0))))
+    else:
+        print(f"could not determine earnings date")
+        time.sleep(2)
+        raise Exception("earnings date problem")
 
 if __name__ == "__main__":
     # Setup the argument parsing

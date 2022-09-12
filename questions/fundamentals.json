@@ -2,10 +2,11 @@
 	"name": "Fundamentals",
 	"questions": [
 		{
-			"question": "When is the next earnings announcement?",
+			"question": "Earnings announcement is NOT in this expiration period?",
 			"type": "earnings_date",
 			"uuid": "409a6708-7045-4df2-a705-c238980e7cf1",
-			"blocker" : true
+			"blocker" : true,
+			"expiration_days" : 3
 		}
 	]
 }

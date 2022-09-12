@@ -28,6 +28,7 @@ def main(config_file,screener_config_file,symbol,verbose):
         print(f"\tMarketCap    : ${quote.get_market_cap()}")
         print(f"\tFloat        : {quote.get_float()} shares")
         print(f"\tBeta         : {quote.get_beta()}")
+        print(f"\tEarningsDate : {quote.get_next_earnings_date()}")
     else:
         print(f"{symbol}: ${quote.get_price():.2f} / ${quote.get_change_close():.2f} ({quote.get_change_close_prct():.2f}%)")
 
