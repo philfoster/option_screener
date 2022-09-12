@@ -331,13 +331,7 @@ class Account:
 
         self._type = account_type
 
-        try:
-            self._portfolio_data = etrade_account.get_account_portfolio(account_key, resp_format='json')
-        except Exception as e:
-            #print(f"ERROR: could not get portfolio data for {self._name}: {e}")
-            raise AccountCreationException
-
-        self._positions = PortfolioPositions(self._portfolio_data)
+        self._positions = PortfolioPositions(etrade_account, account_key)
 
     def get_id(self):
         return self._id
@@ -354,23 +348,28 @@ class Account:
     def get_display_name(self):
         return f"{self.get_name()} ({self.get_id()})"
 
-    def _get_portfolio(self):
-        return self._portfolio_data
-
     def get_positions(self):
         return self._positions.get_positions()
 
 class PortfolioPositions:
     _TYPE_EQUITY = "EQ"
-    _TYPE_OPTION = "OPTN"
     _SUBTYPE_ETF = "ETF"
-    _OPTION_TYPE_CALL = "CALL"
-    _OPTION_TYPE_PUT = "PUT"
+    _TYPE_CASH = "Cash"
 
-    def __init__(self, portfolio_data):
+    _TYPE_OPTION = "OPTN"
+    _SUBTYPE_OPTION_CALL = "CALL"
+    _SUBTYPE_OPTION_PUT = "PUT"
+
+    def __init__(self, etrade_account, account_key):
+        self._etrade_account = etrade_account
+        self._account_key = account_key
         self._positions = dict()
+        try:
+            self._portfolio_data = etrade_account.get_account_portfolio(account_key, resp_format='json')
+        except Exception as e:
+            raise AccountCreationException
 
-        for p in portfolio_data.get("PortfolioResponse").get("AccountPortfolio")[0].get("Position"):
+        for p in self._portfolio_data.get("PortfolioResponse").get("AccountPortfolio")[0].get("Position"):
             p_type = p.get("Product").get("securityType")
             p_subtype = p.get("Product").get("securitySubType")
 
@@ -382,16 +381,21 @@ class PortfolioPositions:
                     p_obj = EquityPosition(p)
             elif p_type == self._TYPE_OPTION:
                 o_type = p.get("Product").get("callPut")
-                if o_type == self._OPTION_TYPE_CALL:
+                if o_type == self._SUBTYPE_OPTION_CALL:
                     p_obj = CallOptionPosition(p)
-                elif o_type == self._OPTION_TYPE_PUT:
+                elif o_type == self._SUBTYPE_OPTION_PUT:
                     p_obj = PutOptionPosition(p)
 
             if p_obj:
                 self._positions[p_obj.get_id()] = p_obj
 
+        self._positions[self._TYPE_CASH] = self._get_cash_position()
+
     def get_positions(self):
         return self._positions.values()
+
+    def _get_cash_position(self):
+        return CashPosition(cash_data = self._etrade_account.get_account_balance(self._account_key, resp_format='json'))
                 
 class Position:
     def __init__(self, position_data):
@@ -431,6 +435,13 @@ class CallOptionPosition(OptionPosition):
 class PutOptionPosition(OptionPosition):
     def __init__(self, position_data):
         super().__init__(position_data)
+
+class CashPosition(Position):
+    def __init__(self, cash_data):
+        self._position_data = cash_data
+        self._id = PortfolioPositions._TYPE_CASH
+        self._display_name = PortfolioPositions._TYPE_CASH
+        self._quantity = cash_data.get("BalanceResponse").get("Cash").get("moneyMktBalance")
 
 class Quote():
     # Three months in seconds to be added to earnings dates that are before today
