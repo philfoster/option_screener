@@ -8,6 +8,7 @@ import sys
 
 from pandas_datareader import data as pdr
 from etrade_tools import *
+from screener_tools import *
 from stock_chart_tools.utils import get_historical_data, EMA, OBV, SSO, MACD
 from stock_chart_tools.utils import COLUMN_CLOSE, COLUMN_VOLUME, COLUMN_HIGH, COLUMN_LOW, MACD_DIVERGENCE, MACD_LABEL, OBV_LABEL, SS_K, SS_D
 
@@ -32,17 +33,6 @@ QUID_SLOW_STOCHASTIC_ABOVE_20="0122c7e7-bc9c-4879-8492-e8f9f7e25940"
 FRESHNESS_DAYS=1
 ONE_DAY = 24 * 60 * 60
 
-CACHE_FRESHNESS_SECONDS=60*60 * 2
-
-# Columns
-THREE_DAY_EMA="3dayEMA"
-FIVE_DAY_EMA="5dayEMA"
-NINE_DAY_EMA="9dayEMA"
-TWENTY_DAY_EMA="20dayEMA"
-HUNDRED_DAY_EMA="100dayEMA"
-VOL_THREE_DAY="Vol3DayEMA"
-VOL_TWENTY_DAY="Vol20DayEMA"
-
 # Globals
 global GLOBAL_VERBOSE
 
@@ -64,7 +54,7 @@ def analyze_symbol(screener_config,questions,symbol):
     answer_file = get_answer_file(screener_config.get(CACHE_DIR),symbol)
     answers = get_all_answers_from_cache(answer_file)
 
-    price_data = get_one_year_data(symbol,screener_config.get(CACHE_DIR))
+    price_data = get_two_year_data(symbol,screener_config.get(CACHE_DIR))
 
     (value,timestamp) = is_price_uptrending(symbol,price_data,answers)
     (value,timestamp) = is_price_above_20dayEMA(symbol,price_data,answers)
@@ -82,53 +72,6 @@ def analyze_symbol(screener_config,questions,symbol):
     (value,timestamp) = is_slow_stochastic_above_20(symbol,price_data,answers)
 
     cache_answers(answer_file,answers)
-
-def get_cache_filename(symbol,cache_dir):
-    return os.path.join(expanduser(cache_dir),f"{symbol}.year.cache")
-
-def get_cached_historical_data(symbol,cache_dir):
-    filename = get_cache_filename(symbol,cache_dir)
-    try:
-        print(f"trying to get the cached data")
-        file_mtime = os.path.getmtime(filename)
-        if (time.time() - file_mtime) < CACHE_FRESHNESS_SECONDS:
-            data = pd.read_csv(filename,index_col=0)
-            return data
-        else:
-            print(f"{filename} cache is not fresh enough")
-    except Exception as e:
-        debug(f"could not read cache {filename}: {e}")
-
-    return None
-
-def cache_historical_data(symbol,cache_dir,price_data):
-    filename = get_cache_filename(symbol,cache_dir)
-    price_data.to_csv(filename)
-
-def get_one_year_data(symbol,cache_dir):
-
-    # Try to get the price data from cache
-    price_data = get_cached_historical_data(symbol,cache_dir)
-    if price_data is not None:
-        debug(f"{symbol} returning historical data from cache")
-        return price_data
-
-    # Nothing fresh in the cache
-    debug(f"{symbol} getting historical data from API")
-    price_data = get_historical_data(symbol)
-
-    price_data[THREE_DAY_EMA] = EMA(price_data[COLUMN_CLOSE],3)
-    price_data[FIVE_DAY_EMA] = EMA(price_data[COLUMN_CLOSE],5)
-    price_data[NINE_DAY_EMA] = EMA(price_data[COLUMN_CLOSE],9)
-    price_data[TWENTY_DAY_EMA] = EMA(price_data[COLUMN_CLOSE],20)
-    price_data[HUNDRED_DAY_EMA] = EMA(price_data[COLUMN_CLOSE],100)
-
-    price_data[VOL_THREE_DAY] = EMA(price_data[COLUMN_VOLUME],3)
-    price_data[VOL_TWENTY_DAY] = EMA(price_data[COLUMN_VOLUME],20)
-
-    cache_historical_data(symbol,cache_dir,price_data)
-
-    return price_data
 
 def is_fresh(cached_answer):
 

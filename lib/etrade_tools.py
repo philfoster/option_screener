@@ -351,6 +351,9 @@ class Account:
     def get_positions(self):
         return self._positions.get_positions()
 
+    def get_balance(self):
+        return self._positions.get_balance()
+
 class PortfolioPositions:
     _TYPE_EQUITY = "EQ"
     _SUBTYPE_ETF = "ETF"
@@ -389,13 +392,16 @@ class PortfolioPositions:
             if p_obj:
                 self._positions[p_obj.get_id()] = p_obj
 
-        self._positions[self._TYPE_CASH] = self._get_cash_position()
+        self._cash_position = self._get_cash_position()
 
     def get_positions(self):
         return self._positions.values()
 
     def _get_cash_position(self):
         return CashPosition(cash_data = self._etrade_account.get_account_balance(self._account_key, resp_format='json'))
+
+    def get_balance(self):
+        return self._cash_position.get_quantity()
                 
 class Position:
     def __init__(self, position_data):
@@ -477,12 +483,16 @@ class Quote():
         self._dividend = float(self._quote_data.get("QuoteResponse").get("QuoteData")[0].get("All").get("dividend"))
 
         earnings_date = self._quote_data.get("QuoteResponse").get("QuoteData")[0].get("All").get("nextEarningDate")
-        (month, day, year) = earnings_date.split("/")
-            
-        self._next_earnings_date = datetime.datetime(year=int(year),month=int(month),day=int(day))
-        if self._next_earnings_date < datetime.datetime.now():
-            self._next_earnings_date = datetime.datetime.fromtimestamp(self._next_earnings_date.timestamp() + self._THREE_MONTHS)
 
+        try:
+            (month, day, year) = earnings_date.split("/")
+            self._next_earnings_date = datetime.datetime(year=int(year),month=int(month),day=int(day))
+            if self._next_earnings_date < datetime.datetime.now():
+                self._next_earnings_date = datetime.datetime.fromtimestamp(self._next_earnings_date.timestamp() + self._THREE_MONTHS)
+
+        except ValueError as e:
+            self._next_earnings_date = None
+            
         # TODO - yield, div pay date(epoch seconds), p/e ratio, eps, estEarning, 
         # TODO - after hours data (price, bid, ask, volume, change%)
         self._sector = "unknown"

@@ -1,8 +1,15 @@
 import glob
 import json
 import os
-from os.path import expanduser
+import pandas as pd
+import sys
+import time
+
 from etrade_tools import *
+from os.path import expanduser
+from pandas_datareader import data as pdr
+from stock_chart_tools.utils import get_historical_data, EMA, OBV, SSO, MACD
+from stock_chart_tools.utils import COLUMN_CLOSE, COLUMN_VOLUME, COLUMN_HIGH, COLUMN_LOW, MACD_DIVERGENCE, MACD_LABEL, OBV_LABEL, SS_K, SS_D
 
 # Screener config items
 CACHE_DIR="cache_dir"
@@ -41,6 +48,9 @@ CACHE_VALUE="value"
 CACHE_EXPIRATION_TIMESTAMP="expiration_timestamp"
 CACHE_QUESTION="question"
 
+# Two hours
+CACHE_FRESHNESS_SECONDS=60*60 * 4
+
 # Quetion types
 TYPE_BOOLEAN="boolean"
 TYPE_EARNINGS="earnings_date"
@@ -49,6 +59,15 @@ TYPE_PRICE="price_filter"
 TYPE_VOLUME="volume_filter"
 TYPE_OPEN_INTEREST="open_interest_filter"
 TYPE_BETA="beta_filter"
+
+# Columns
+THREE_DAY_EMA="3dayEMA"
+FIVE_DAY_EMA="5dayEMA"
+NINE_DAY_EMA="9dayEMA"
+TWENTY_DAY_EMA="20dayEMA"
+HUNDRED_DAY_EMA="100dayEMA"
+VOL_THREE_DAY="Vol3DayEMA"
+VOL_TWENTY_DAY="Vol20DayEMA"
 
 def get_sector_from_cache(screener_config,symbol):
     answer_file = get_answer_file(screener_config.get(CACHE_DIR),symbol)
@@ -149,3 +168,94 @@ def get_score(screener_config,symbol):
                     true_count += 1
                 
     return 100 * float(true_count / total_count)
+
+def get_cache_filename(symbol,cache_dir):
+    return os.path.join(expanduser(cache_dir),f"{symbol}.year.cache")
+
+def get_cached_historical_data(symbol,cache_dir):
+    filename = get_cache_filename(symbol,cache_dir)
+    try:
+        file_mtime = os.path.getmtime(filename)
+        if (time.time() - file_mtime) < CACHE_FRESHNESS_SECONDS:
+            data = pd.read_csv(filename,index_col=0)
+            return data
+        else:
+            print(f"{filename} cache is not fresh enough")
+    except Exception as e:
+        pass
+
+    return None
+
+def cache_historical_data(symbol,cache_dir,price_data):
+    filename = get_cache_filename(symbol,cache_dir)
+    price_data.to_csv(filename)
+
+def get_two_year_data(symbol,cache_dir):
+
+    # Try to get the price data from cache
+    price_data = get_cached_historical_data(symbol,cache_dir)
+    if price_data is not None:
+        return price_data
+
+    # Nothing fresh in the cache
+    price_data = get_historical_data(symbol, 1000)
+
+    price_data[THREE_DAY_EMA] = EMA(price_data[COLUMN_CLOSE],3)
+    price_data[FIVE_DAY_EMA] = EMA(price_data[COLUMN_CLOSE],5)
+    price_data[NINE_DAY_EMA] = EMA(price_data[COLUMN_CLOSE],9)
+    price_data[TWENTY_DAY_EMA] = EMA(price_data[COLUMN_CLOSE],20)
+    price_data[HUNDRED_DAY_EMA] = EMA(price_data[COLUMN_CLOSE],100)
+
+    price_data[VOL_THREE_DAY] = EMA(price_data[COLUMN_VOLUME],3)
+    price_data[VOL_TWENTY_DAY] = EMA(price_data[COLUMN_VOLUME],20)
+
+    cache_historical_data(symbol,cache_dir,price_data)
+
+    return price_data
+
+def get_cache_filename(symbol,cache_dir):
+    return os.path.join(expanduser(cache_dir),f"{symbol}.year.cache")
+
+def get_cached_historical_data(symbol,cache_dir):
+    filename = get_cache_filename(symbol,cache_dir)
+    try:
+        print(f"trying to get the cached data")
+        file_mtime = os.path.getmtime(filename)
+        if (time.time() - file_mtime) < CACHE_FRESHNESS_SECONDS:
+            data = pd.read_csv(filename,index_col=0)
+            print(f"found cached data for {symbol}")
+            return data
+        else:
+            print(f"{filename} cache is not fresh enough")
+    except Exception as e:
+        print(f"could not get cached data for {symbol}: {e}")
+        pass
+
+    return None
+
+def cache_historical_data(symbol,cache_dir,price_data):
+    filename = get_cache_filename(symbol,cache_dir)
+    price_data.to_csv(filename)
+
+def get_one_year_data(symbol,cache_dir):
+
+    # Try to get the price data from cache
+    price_data = get_cached_historical_data(symbol,cache_dir)
+    if price_data is not None:
+        return price_data
+
+    # Nothing fresh in the cache
+    price_data = get_historical_data(symbol)
+
+    price_data[THREE_DAY_EMA] = EMA(price_data[COLUMN_CLOSE],3)
+    price_data[FIVE_DAY_EMA] = EMA(price_data[COLUMN_CLOSE],5)
+    price_data[NINE_DAY_EMA] = EMA(price_data[COLUMN_CLOSE],9)
+    price_data[TWENTY_DAY_EMA] = EMA(price_data[COLUMN_CLOSE],20)
+    price_data[HUNDRED_DAY_EMA] = EMA(price_data[COLUMN_CLOSE],100)
+
+    price_data[VOL_THREE_DAY] = EMA(price_data[COLUMN_VOLUME],3)
+    price_data[VOL_TWENTY_DAY] = EMA(price_data[COLUMN_VOLUME],20)
+
+    cache_historical_data(symbol,cache_dir,price_data)
+
+    return price_data

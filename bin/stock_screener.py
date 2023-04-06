@@ -406,9 +406,8 @@ def ask_question_earnings(screener_config, answer_file, symbol, section, questio
             debug(f"earnings date {earnings_date} is after next_monthly={next_monthly}")
             return (True,int(get_current_timestamp() + (86400 * question.get(QUESTION_EXPIRATION_DAYS,0))))
     else:
-        print(f"could not determine earnings date")
-        time.sleep(2)
-        raise Exception("earnings date problem")
+        debug(f"WARNING: could not determine earnings date")
+        return (True,int(get_current_timestamp() + (86400 * question.get(QUESTION_EXPIRATION_DAYS,0))))
 
 if __name__ == "__main__":
     # Setup the argument parsing
